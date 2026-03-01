@@ -16,6 +16,12 @@ interface Product {
 
 export default function Home() {
   const [categories, setCategories] = useState<string[]>([]);
+  // mapping for featured category images
+  const categoryImages: Record<string, string> = {
+    Appliances: "/appliances.jpeg",
+    grocessories: "/grocessories.jpeg",
+    "Health & Beauty": "/This health.jpeg",
+  };
   const [trendingProducts, setTrendingProducts] = useState<Product[]>([]);
   const [newStockProducts, setNewStockProducts] = useState<Product[]>([]);
 
@@ -26,7 +32,7 @@ export default function Home() {
         if (Array.isArray(data)) {
           // rename legacy category if present
           const normalized = data.map((c: string) =>
-            c === 'Electronics & Computing' ? 'grocessories' : c
+            c === 'Electronics & Computing' ? 'Grocessories' : c
           );
           setCategories(normalized);
         }
@@ -58,7 +64,17 @@ export default function Home() {
           {categories.length > 0 ? (
             categories.slice(0, 3).map((cat, idx) => (
               <div key={cat + idx} className="bg-white rounded-lg shadow-md p-4 sm:p-6 hover:shadow-lg transition">
-                <div className="h-40 sm:h-48 bg-gray-200 rounded mb-4"></div>
+                <div className="h-40 sm:h-48 bg-gray-200 rounded mb-4 overflow-hidden">
+                  {categoryImages[cat] && (
+                    <Image
+                      src={categoryImages[cat]}
+                      alt={cat}
+                      width={400}
+                      height={320}
+                      className="object-cover w-full h-full"
+                    />
+                  )}
+                </div>
                 <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-2">{cat}</h3>
                 <p className="text-sm sm:text-base text-gray-600">Browse our latest products</p>
               </div>
