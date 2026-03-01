@@ -75,7 +75,7 @@ export default function Home() {
                     />
                   )}
                 </div>
-                <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-2">{cat}</h3>
+                <h3 className="text-base sm:text-lg md:text-lg font-semibold mb-2">{cat}</h3>
                 <p className="text-sm sm:text-base text-gray-600">Browse our latest products</p>
               </div>
             ))
