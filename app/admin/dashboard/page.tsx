@@ -6,7 +6,7 @@ import UploadProductForm from './UploadProductForm';
 import {
   HomeIcon,
   UserIcon,
-  ClipboardListIcon,
+  ClipboardIcon,
   TagIcon,
   CurrencyDollarIcon,
   ChartBarIcon,
