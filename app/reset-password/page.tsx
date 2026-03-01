@@ -60,38 +60,38 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white p-6 text-gray-800 rounded shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-4 text-center text-orange-600">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-white px-4 sm:px-6 py-6 sm:py-8">
+      <div className="bg-white p-6 sm:p-8 text-gray-800 rounded-lg shadow-lg w-full max-w-md">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-center text-orange-600">
           Reset Your Password
         </h1>
 
-        <form onSubmit={handleResetPassword} className="flex flex-col gap-3">
+        <form onSubmit={handleResetPassword} className="flex flex-col gap-4 sm:gap-5">
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="border px-3 py-2 rounded"
+            className="w-full border border-gray-300 px-4 py-3 sm:py-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-base"
             placeholder="Enter new password"
           />
           <input
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="border px-3 py-2 rounded"
+            className="w-full border border-gray-300 px-4 py-3 sm:py-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-base"
             placeholder="Confirm new password"
           />
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-orange-500 text-white py-2 rounded hover:bg-orange-600 disabled:bg-gray-400"
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 sm:py-4 rounded-lg font-semibold transition duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed text-base sm:text-lg"
           >
             {loading ? 'Updating...' : 'Update Password'}
           </button>
         </form>
 
         {message && (
-          <p className={`mt-4 text-center text-sm p-3 rounded ${
+          <p className={`mt-4 text-center text-sm sm:text-base p-3 sm:p-4 rounded-lg font-medium ${
             messageType === 'error' ? 'bg-red-100 text-red-700' :
             messageType === 'success' ? 'bg-green-100 text-green-700' :
             'bg-blue-100 text-blue-700'

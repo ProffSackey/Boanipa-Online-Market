@@ -39,33 +39,35 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow-md w-full max-w-sm">
-        <h1 className="text-xl text-gray-800 font-bold mb-4">Admin Login</h1>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full border text-gray-800 px-3 py-2 mb-2"
-          placeholder="Email"
-          required
-        />
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full border text-gray-800 px-3 py-2 mb-2"
-          placeholder="Password"
-          required
-        />
-        {error && <p className="text-red-600 mb-2">{error}</p>}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:bg-gray-400"
-        >
-          {loading ? 'Logging in...' : 'Log in'}
-        </button>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-white px-4 sm:px-6 py-6 sm:py-8">
+      <form onSubmit={handleSubmit} className="bg-white p-6 sm:p-8 rounded-lg shadow-lg w-full max-w-md">
+        <h1 className="text-2xl sm:text-3xl text-gray-800 font-bold mb-6 sm:mb-8 text-center">Admin Login</h1>
+        <div className="flex flex-col gap-4 sm:gap-5">
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full border border-gray-300 text-gray-800 px-4 py-3 sm:py-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+            placeholder="Email"
+            required
+          />
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full border border-gray-300 text-gray-800 px-4 py-3 sm:py-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+            placeholder="Password"
+            required
+          />
+          {error && <p className="text-red-600 text-sm sm:text-base font-medium bg-red-50 p-3 rounded-lg">{error}</p>}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 sm:py-4 rounded-lg font-semibold transition duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed text-base sm:text-lg"
+          >
+            {loading ? 'Logging in...' : 'Log in'}
+          </button>
+        </div>
       </form>
     </div>
   );
