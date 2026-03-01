@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 
 type Slide = {
   id: number;
@@ -37,11 +38,17 @@ export default function HeroCarousel() {
           >
             {/* background image for specific slide */}
             {s.id === 3 && (
-              <div
-                className="absolute inset-0 bg-cover bg-center"
-                style={{ backgroundImage: `url('/fastdelivery.jpeg')` }}
-              />
+              <div className="absolute inset-0">
+                <Image
+                  src="/fastdelivery.jpeg"
+                  alt="Fast Delivery"
+                  fill
+                  style={{ objectFit: "cover" }}
+                  className="object-cover"
+                />
+              </div>
             )}
+
             {/* subtle overlay for readability */}
             <div className="absolute inset-0 bg-black/10" />
 
