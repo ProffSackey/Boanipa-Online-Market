@@ -18,6 +18,7 @@ export default function AdminDashboard() {
     price: number;
     category: string;
     image_url?: string;
+    stock?: number;
   }
   const [products, setProducts] = useState<Product[]>([]);
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
@@ -203,6 +204,13 @@ export default function AdminDashboard() {
                       className="px-3 py-2 border border-gray-300 rounded-lg"
                       placeholder="Image URL"
                     />
+                    <input
+                      type="number"
+                      value={productEdits.stock !== undefined ? productEdits.stock : ''}
+                      onChange={(e) => setProductEdits({ ...productEdits, stock: parseInt(e.target.value) })}
+                      className="px-3 py-2 border border-gray-300 rounded-lg"
+                      placeholder="Stock Quantity"
+                    />
                     <div className="flex gap-2">
                       <button
                         onClick={() => updateProduct(p.id)}
@@ -221,7 +229,7 @@ export default function AdminDashboard() {
                 ) : (
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <span className="font-semibold text-gray-800">
-                      {p.name} – {p.category} – ${p.price}
+                      {p.name} – {p.category} – ${p.price} – Stock: {p.stock || 0}
                     </span>
                     <div className="flex gap-2">
                       <button
@@ -233,6 +241,7 @@ export default function AdminDashboard() {
                             price: p.price,
                             category: p.category,
                             image_url: p.image_url,
+                            stock: p.stock,
                           });
                         }}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold text-sm sm:text-base"

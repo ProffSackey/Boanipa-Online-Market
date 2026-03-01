@@ -14,6 +14,7 @@ export default function UploadProductForm({ refreshCategories, categories = [], 
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [stock, setStock] = useState('');
   const [message, setMessage] = useState('');
 
   const handleSubmit = async (e: FormEvent) => {
@@ -22,7 +23,7 @@ export default function UploadProductForm({ refreshCategories, categories = [], 
     const res = await fetch('/api/admin/products', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, description, price: parseFloat(price), category, image_url: imageUrl }),
+      body: JSON.stringify({ name, description, price: parseFloat(price), category, image_url: imageUrl, stock: stock ? parseInt(stock) : 0 }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -34,6 +35,7 @@ export default function UploadProductForm({ refreshCategories, categories = [], 
       setPrice('');
       setCategory('');
       setImageUrl('');
+      setStock('');
       refreshCategories();
       if (onSuccess) onSuccess();
     }
@@ -94,6 +96,14 @@ export default function UploadProductForm({ refreshCategories, categories = [], 
           onChange={(e) => setImageUrl(e.target.value)}
           placeholder="Image URL"
           className="border px-3 py-2 rounded"
+        />
+        <input
+          value={stock}
+          onChange={(e) => setStock(e.target.value)}
+          placeholder="Stock Quantity"
+          type="number"
+          className="border px-3 py-2 rounded"
+          required
         />
         <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
           Upload

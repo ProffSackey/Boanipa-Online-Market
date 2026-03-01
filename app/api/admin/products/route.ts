@@ -60,7 +60,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { id, name, description, price, category, image_url } = body;
+  const { id, name, description, price, category, image_url, stock } = body;
   if (id === undefined) {
     return NextResponse.json({ error: 'Missing id' }, { status: 400 });
   }
@@ -71,6 +71,7 @@ export async function PATCH(req: NextRequest) {
   if (price !== undefined) updates.price = price;
   if (category !== undefined) updates.category = category;
   if (image_url !== undefined) updates.image_url = image_url;
+  if (stock !== undefined) updates.stock = stock;
 
   const supabase = getSupabaseAdmin();
   if (!supabase) {
@@ -91,7 +92,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { name, description, price, category, image_url } = body;
+  const { name, description, price, category, image_url, stock } = body;
   if (!name || !category || price === undefined) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
   }
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Supabase not configured' }, { status: 500 });
   }
 
-  const { data, error } = await supabase.from('products').insert([{ name, description, price, category, image_url }]);
+  const { data, error } = await supabase.from('products').insert([{ name, description, price, category, image_url, stock: stock || 0 }]);
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
