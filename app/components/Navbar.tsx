@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCartIcon, UserCircleIcon, MagnifyingGlassIcon, BellIcon } from '@heroicons/react/24/outline';
+import { ShoppingCartIcon, UserCircleIcon, MagnifyingGlassIcon, BellIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { supabase } from '../../lib/supabaseClient';
 
 export default function Navbar() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
   // don't render on admin pages
@@ -74,11 +75,22 @@ export default function Navbar() {
       {/* top row with logo and icons - visible on all screens */}
       <div className="w-full px-2 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 sm:h-16 gap-2">
-          {/* logo */}
-          <div className="flex-shrink-0">
-            <Link href="/" className="text-lg sm:text-2xl text-gray-800 font-bold whitespace-nowrap">
-              BOANIPA
-            </Link>
+          <div className="flex items-center gap-2">
+            {/* mobile menu button */}
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="sm:hidden p-1 text-gray-600 hover:text-gray-900 transition"
+              aria-label="Open menu"
+            >
+              <Bars3Icon className="h-6 w-6" />
+            </button>
+
+            {/* logo */}
+            <div className="flex-shrink-0">
+              <Link href="/" className="text-lg sm:text-2xl text-gray-800 font-bold whitespace-nowrap">
+                BOANIPA
+              </Link>
+            </div>
           </div>
 
           {/* search box - hidden on mobile, visible on sm and up */}
@@ -138,8 +150,8 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* category row */}
-      <div className="bg-gray-50 text-gray-600 border-t border-gray-200 w-full overflow-x-auto">
+      {/* category row (hidden on mobile; categories available via menu) */}
+      <div className="hidden sm:block bg-gray-50 text-gray-600 border-t border-gray-200 w-full overflow-x-auto">
         <div className="w-full px-2 sm:px-6 lg:px-8">
           <div className="flex space-x-2 sm:space-x-6 py-2 text-[15px] sm:text-sm whitespace-nowrap overflow-x-auto scrollbar-hide">
             {categories.map((cat) => (
@@ -157,6 +169,38 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+
+      {/* Mobile category drawer */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 flex">
+          <div className="fixed inset-0 bg-black/40" onClick={() => setMobileMenuOpen(false)} />
+          <aside className="relative w-72 bg-white p-4 shadow-lg overflow-auto">
+            <button className="absolute top-3 right-3 p-1 text-gray-600 hover:text-gray-900" onClick={() => setMobileMenuOpen(false)} aria-label="Close menu">
+              <XMarkIcon className="h-6 w-6" />
+            </button>
+            <h3 className="text-lg font-semibold mb-3">Categories</h3>
+            <nav>
+              <ul className="space-y-2">
+                {categories.length === 0 && <li className="text-sm text-gray-500">No categories</li>}
+                {categories.map((cat) => (
+                  <li key={cat}>
+                    <Link
+                      href={`/category/${cat
+                        .toLowerCase()
+                        .replace(/ & /g, "-")
+                        .replace(/ /g, "-")}`}
+                      className="block px-2 py-2 rounded hover:bg-gray-100"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {cat}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          </aside>
+        </div>
+      )}
     </nav>
   );
 }
