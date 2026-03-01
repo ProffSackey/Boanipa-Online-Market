@@ -56,14 +56,14 @@ export default function UploadProductForm({ refreshCategories, categories = [], 
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Product name"
-          className="border px-3 py-2 rounded"
+          className="border px-3 py-2 rounded text-gray-800"
           required
         />
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Description"
-          className="border px-3 py-2 rounded"
+          className="border px-3 py-2 rounded text-gray-800"
           rows={3}
         />
         <input
@@ -72,14 +72,14 @@ export default function UploadProductForm({ refreshCategories, categories = [], 
           placeholder="Price"
           type="number"
           step="0.01"
-          className="border px-3 py-2 rounded"
+          className="border px-3 py-2 rounded text-gray-800"
           required
         />
         {categories && categories.length > 0 ? (
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="border px-3 py-2 rounded"
+            className="border px-3 py-2 rounded text-gray-800"
             required
           >
             <option value="">Select category</option>
@@ -94,7 +94,7 @@ export default function UploadProductForm({ refreshCategories, categories = [], 
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             placeholder="Category"
-            className="border px-3 py-2 rounded"
+            className="border px-3 py-2 rounded text-gray-800"
             required
           />
         )}
@@ -113,7 +113,7 @@ export default function UploadProductForm({ refreshCategories, categories = [], 
                 reader.readAsDataURL(file);
               }
             }}
-            className="border px-2 py-1 rounded w-full"
+            className="border px-2 py-1 rounded w-full text-gray-800"
           />
           {imageData && (
             <img src={imageData} alt="preview" className="mt-2 h-24 object-contain" />
@@ -124,7 +124,7 @@ export default function UploadProductForm({ refreshCategories, categories = [], 
           onChange={(e) => setStock(e.target.value)}
           placeholder="Stock Quantity"
           type="number"
-          className="border px-3 py-2 rounded w-full"
+          className="border px-3 py-2 rounded w-full text-gray-800"
           required
         />
         <button className="bg-blue-600 text-white px-5 py-3 rounded-md hover:bg-blue-700 w-full font-semibold">
