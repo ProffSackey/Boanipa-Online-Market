@@ -51,7 +51,7 @@ export default function CategoryPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8 sm:mb-12">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">{categoryName}</h1>
+          <h1 className="text-lg sm:text-2xl font-bold text-gray-800 mb-2">{categoryName}</h1>
           <p className="text-base sm:text-lg text-gray-600">Browse our collection</p>
         </div>
 
