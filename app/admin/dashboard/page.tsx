@@ -3,6 +3,16 @@
 import { useEffect, useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import UploadProductForm from './UploadProductForm';
+import {
+  HomeIcon,
+  UserIcon,
+  ClipboardListIcon,
+  TagIcon,
+  CurrencyDollarIcon,
+  ChartBarIcon,
+  ChatBubbleLeftRightIcon,
+  ArrowRightOnRectangleIcon,
+} from '@heroicons/react/24/outline';
 
 interface Product {
   id: number;
@@ -128,7 +138,7 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 p-4 hidden md:flex md:flex-col">
+      <aside className="w-64 text-gray-800 bg-white border-r border-gray-200 p-4 hidden md:flex md:flex-col">
         <h2 className="text-lg font-semibold mb-6">Menu</h2>
         <nav className="space-y-3 text-gray-700 text-base">
           <a href="/admin/dashboard" className="block px-3 py-2 rounded hover:bg-gray-100 font-medium">Dashboard Overview</a>
@@ -156,7 +166,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Add Category Form */}
-          <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6 sm:mb-8">
+          <div className="bg-white text-gray-800 rounded-lg shadow-md p-4 sm:p-6 mb-6 sm:mb-8">
             <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4">Add New Category</h2>
             <form onSubmit={addCategory} className="flex flex-col sm:flex-row gap-3">
               <input
@@ -179,7 +189,7 @@ export default function AdminDashboard() {
           />
 
           {/* Products List */}
-          <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+          <div className="bg-white text-gray-800 rounded-lg shadow-md overflow-hidden mb-6">
             <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
               <h2 className="text-lg sm:text-xl font-bold text-gray-800">Products</h2>
             </div>
@@ -286,7 +296,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* Categories List */}
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="bg-white text-gray-800 rounded-lg shadow-md overflow-hidden">
             <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
               <h2 className="text-lg sm:text-xl font-bold text-gray-800">Categories</h2>
             </div>
