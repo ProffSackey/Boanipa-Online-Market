@@ -28,7 +28,7 @@ export default function HeroCarousel() {
 
   return (
     <div className="relative overflow-hidden px-4 sm:px-6 md:px-8 py-6 sm:py-8 md:py-12 max-w-7xl mx-auto">
-      <div className="relative h-48 sm:h-60 md:h-72 lg:h-[28rem] xl:h-[40rem]">
+      <div className="relative h-56 sm:h-64 md:h-80 lg:h-[28rem] xl:h-[40rem]">
         {slides.map((s, i) => (
           <div
             key={s.id}
