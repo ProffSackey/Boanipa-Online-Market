@@ -2,6 +2,7 @@
 
 import { useEffect, useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import UploadProductForm from './UploadProductForm';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -10,10 +11,31 @@ export default function AdminDashboard() {
   const [editing, setEditing] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
 
+  interface Product {
+    id: number;
+    name: string;
+    description?: string;
+    price: number;
+    category: string;
+    image_url?: string;
+  }
+  const [products, setProducts] = useState<Product[]>([]);
+  const [editingProductId, setEditingProductId] = useState<number | null>(null);
+  const [productEdits, setProductEdits] = useState<Partial<Product>>({});
+
   const fetchCats = () => {
     fetch('/api/categories')
       .then((r) => r.json())
       .then(setCategories)
+      .catch(console.error);
+  };
+
+  const fetchProducts = () => {
+    fetch('/api/admin/products')
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) setProducts(data);
+      })
       .catch(console.error);
   };
 
@@ -28,6 +50,7 @@ export default function AdminDashboard() {
       .catch(() => router.push('/admin/login'));
     
     fetchCats();
+    fetchProducts();
   }, [router]);
 
   const addCategory = async (e: FormEvent) => {
@@ -62,6 +85,28 @@ export default function AdminDashboard() {
       body: JSON.stringify({ name }),
     });
     fetchCats();
+  };
+
+  const deleteProduct = async (id: number) => {
+    if (!confirm('Remove this product?')) return;
+    await fetch('/api/admin/products', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    fetchProducts();
+  };
+
+  const updateProduct = async (id: number) => {
+    if (editingProductId !== id) return;
+    await fetch('/api/admin/products', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...productEdits }),
+    });
+    setEditingProductId(null);
+    setProductEdits({});
+    fetchProducts();
   };
 
   const handleLogout = async () => {
@@ -100,6 +145,112 @@ export default function AdminDashboard() {
               Add Category
             </button>
           </form>
+        </div>
+
+        {/* Upload Product Form */}
+        <UploadProductForm
+          refreshCategories={fetchCats}
+          categories={categories}
+          onSuccess={fetchProducts}
+        />
+
+        {/* Products List */}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800">Products</h2>
+          </div>
+          <ul className="divide-y divide-gray-200">
+            {products.map((p) => (
+              <li key={p.id} className="px-4 sm:px-6 py-4 sm:py-5 hover:bg-gray-50 transition">
+                {editingProductId === p.id ? (
+                  <div className="flex flex-col gap-3">
+                    <input
+                      value={productEdits.name || ''}
+                      onChange={(e) => setProductEdits({ ...productEdits, name: e.target.value })}
+                      className="px-3 py-2 border border-gray-300 rounded-lg"
+                      placeholder="Name"
+                    />
+                    <textarea
+                      value={productEdits.description || ''}
+                      onChange={(e) => setProductEdits({ ...productEdits, description: e.target.value })}
+                      className="px-3 py-2 border border-gray-300 rounded-lg"
+                      placeholder="Description"
+                      rows={2}
+                    />
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={productEdits.price !== undefined ? productEdits.price : ''}
+                      onChange={(e) => setProductEdits({ ...productEdits, price: parseFloat(e.target.value) })}
+                      className="px-3 py-2 border border-gray-300 rounded-lg"
+                      placeholder="Price"
+                    />
+                    <select
+                      value={productEdits.category || ''}
+                      onChange={(e) => setProductEdits({ ...productEdits, category: e.target.value })}
+                      className="px-3 py-2 border border-gray-300 rounded-lg"
+                    >
+                      <option value="">Category</option>
+                      {categories.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      value={productEdits.image_url || ''}
+                      onChange={(e) => setProductEdits({ ...productEdits, image_url: e.target.value })}
+                      className="px-3 py-2 border border-gray-300 rounded-lg"
+                      placeholder="Image URL"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => updateProduct(p.id)}
+                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => setEditingProductId(null)}
+                        className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg font-semibold"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <span className="font-semibold text-gray-800">
+                      {p.name} – {p.category} – ${p.price}
+                    </span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setEditingProductId(p.id);
+                          setProductEdits({
+                            name: p.name,
+                            description: p.description,
+                            price: p.price,
+                            category: p.category,
+                            image_url: p.image_url,
+                          });
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold text-sm sm:text-base"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => deleteProduct(p.id)}
+                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold text-sm sm:text-base"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
         </div>
 
         {/* Categories List */}
