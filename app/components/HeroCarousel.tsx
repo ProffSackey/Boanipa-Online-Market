@@ -65,7 +65,7 @@ export default function HeroCarousel() {
         ))}
       </div>
       {/* indicators */}
-      <div className="flex items-center justify-center gap-2 mt-6">
+      <div className="flex items-center justify-center gap-2">
         {slides.map((s, i) => (
           <button
             key={s.id}
