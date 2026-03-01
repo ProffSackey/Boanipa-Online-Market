@@ -117,7 +117,7 @@ export default function Navbar() {
 
       {/* Search bar for mobile - full-width centered row with icon */}
       <div className="sm:hidden bg-gray-50 border-t border-gray-200 w-full px-3 py-3">
-        <div className="max-w-xl mx-auto">
+        <div className="max-w-md mx-auto">
           <form className="flex items-center gap-3">
             <div className="relative flex-1">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -125,12 +125,12 @@ export default function Navbar() {
                 type="text"
                 name="q"
                 placeholder="Search for products, categories..."
-                className="w-full pl-11 pr-4 py-3 rounded-full border border-gray-200 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full pl-11 pr-4 py-3 rounded-full border border-gray-200 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
             </div>
             <button
               type="submit"
-              className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-3 rounded-full font-semibold text-sm flex-shrink-0"
+              className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-3 rounded-full font-semibold text-base flex-shrink-0"
             >
               Search
             </button>
