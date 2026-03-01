@@ -10,6 +10,8 @@ export default function AdminDashboard() {
   const [newCategory, setNewCategory] = useState('');
   const [editing, setEditing] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
+  // ensure we only show dashboard after verifying session
+  const [sessionChecked, setSessionChecked] = useState(false);
 
   interface Product {
     id: number;
@@ -46,13 +48,19 @@ export default function AdminDashboard() {
       .then((res) => {
         if (!res.ok) {
           router.push('/admin/login');
+        } else {
+          setSessionChecked(true);
         }
       })
-      .catch(() => router.push('/admin/login'));
+      .catch(() => {
+        router.push('/admin/login');
+      });
     
-    fetchCats();
-    fetchProducts();
-  }, [router]);
+    if (sessionChecked) {
+      fetchCats();
+      fetchProducts();
+    }
+  }, [router, sessionChecked]);
 
   const addCategory = async (e: FormEvent) => {
     e.preventDefault();
@@ -114,6 +122,10 @@ export default function AdminDashboard() {
     await fetch('/api/admin/logout', { method: 'POST' });
     router.push('/admin/login');
   };
+
+  if (!sessionChecked) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 px-4 sm:px-6 md:px-8 py-6 sm:py-8">

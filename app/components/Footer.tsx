@@ -79,15 +79,15 @@ export default function Footer() {
               <input
                 type="email"
                 name="email"
-                placeholder="you@example.com"
-                className="w-full px-3 py-2 rounded-l-md border border-[#3A3A3A] text-[#F2F2F2] placeholder:text-[#A8A8A8] text-sm focus:outline-none bg-[#262626]"
+                placeholder="yourmail@example.com"
+                className="w-full px-3 py-2 rounded-l-md border border-[#F97316] text-[#F2F2F2] placeholder:text-[#A8A8A8] text-sm focus:outline-none bg-[#262626]"
               />
               <button className="bg-[#F97316] hover:bg-[#ea7a2a] text-white px-2 py-2 rounded-r-md text-sm w-20">Subscribe</button>
             </form>
           </div>
         </div>
 
-        <div className="mt-8 border-t border-gray-100 pt-6 text-center text-sm text-gray-500">
+        <div className="mt-8 border-t border-gray-100 pt-6 text-center text-sm text-gray-100">
           © {year} BOANIPA — All rights reserved.
         </div>
       </div>
