@@ -27,7 +27,7 @@ export default function HeroCarousel() {
   }, [slides.length]);
 
   return (
-    <div className="relative overflow-hidden px-4 sm:px-6 md:px-8 py-12 sm:py-16 md:py-20 max-w-7xl mx-auto">
+    <div className="relative overflow-hidden px-4 sm:px-6 md:px-8 py-6 sm:py-8 md:py-12 max-w-7xl mx-auto">
       <div className="relative h-48 sm:h-60 md:h-72 lg:h-[28rem] xl:h-[40rem]">
         {slides.map((s, i) => (
           <div
@@ -65,7 +65,7 @@ export default function HeroCarousel() {
         ))}
       </div>
       {/* indicators */}
-      <div className="flex items-center justify-center gap-2">
+      <div className="flex items-center justify-center gap-2 mt-6">
         {slides.map((s, i) => (
           <button
             key={s.id}
