@@ -32,3 +32,12 @@ body {
   display: none;
 }
 
+/* Prevent iOS from zooming inputs when focused by ensuring 16px font-size and disabling text-size-adjust */
+html, body {
+  -webkit-text-size-adjust: 100%;
+}
+
+input, textarea, select, button {
+  font-size: 16px;
+}
+
