@@ -1,18 +1,11 @@
 import Image from "next/image";
+import HeroCarousel from "./components/HeroCarousel";
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white">
       {/* Hero Section */}
-      <div className="px-4 sm:px-6 md:px-8 py-12 sm:py-16 md:py-20 max-w-7xl mx-auto">
-        <div className="text-center">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-800 mb-4">Welcome to BOANIPA</h1>
-          <p className="text-base sm:text-lg text-gray-600 mb-8">Your one-stop online marketplace</p>
-          <button className="bg-orange-500 hover:bg-orange-600 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-full font-semibold transition">
-            Start Shopping
-          </button>
-        </div>
-      </div>
+      <HeroCarousel />
 
       {/* Featured Categories */}
       <div className="px-4 sm:px-6 md:px-8 py-8 sm:py-12 max-w-7xl mx-auto">
