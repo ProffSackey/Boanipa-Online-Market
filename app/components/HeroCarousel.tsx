@@ -53,8 +53,8 @@ export default function HeroCarousel() {
             <div className="absolute inset-0 bg-black/10" />
 
             <div className="relative z-10 flex flex-col items-center justify-center px-4">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 dark:text-white mb-3">{s.title}</h1>
-              <p className="text-sm sm:text-base md:text-lg text-gray-700 dark:text-gray-200 mb-6">{s.subtitle}</p>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3">{s.title}</h1>
+              <p className="text-sm sm:text-base md:text-lg text-white mb-6">{s.subtitle}</p>
               {s.cta && (
                 <button className="bg-orange-500 hover:bg-orange-600 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-full font-semibold transition">
                   {s.cta}
