@@ -70,13 +70,13 @@ export default function Navbar() {
   }, []);
 
   return (
-    <nav className="bg-white shadow sticky top-0 z-50">
+    <nav className="bg-white shadow sticky top-0 z-50 w-screen overflow-x-hidden">
       {/* top row with logo, search, icons */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-2 sm:gap-4">
+      <div className="w-full px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-14 sm:h-16 gap-2">
           {/* logo */}
           <div className="flex-shrink-0">
-            <Link href="/" className="text-xl sm:text-2xl text-gray-800 font-bold">
+            <Link href="/" className="text-lg sm:text-2xl text-gray-800 font-bold whitespace-nowrap">
               BOANIPA
             </Link>
           </div>
@@ -100,25 +100,25 @@ export default function Navbar() {
           </div>
 
           {/* icons */}
-          <div className="flex items-center gap-3 sm:gap-6">
-            <Link href="/notifications" className="text-gray-600 hover:text-gray-900 transition">
-              <BellIcon className="h-6 w-6 sm:h-8 sm:w-8" />
+          <div className="flex items-center gap-2 sm:gap-6 flex-shrink-0">
+            <Link href="/notifications" className="text-gray-600 hover:text-gray-900 transition p-1">
+              <BellIcon className="h-5 w-5 sm:h-8 sm:w-8" />
             </Link>
-            <Link href="/cart" className="text-gray-600 hover:text-gray-900 transition">
-              <ShoppingCartIcon className="h-6 w-6 sm:h-8 sm:w-8" />
+            <Link href="/cart" className="text-gray-600 hover:text-gray-900 transition p-1">
+              <ShoppingCartIcon className="h-5 w-5 sm:h-8 sm:w-8" />
             </Link>
-            <Link href={user ? "/user" : "/login"} className="flex items-center gap-1 sm:gap-2 text-gray-600 hover:text-gray-900 transition">
-              <UserCircleIcon className="h-6 w-6 sm:h-8 sm:w-8" />
-              {firstName && <span className="hidden xs:inline text-xs sm:text-sm font-semibold">{firstName}</span>}
+            <Link href={user ? "/user" : "/login"} className="flex items-center gap-1 sm:gap-2 text-gray-600 hover:text-gray-900 transition p-1">
+              <UserCircleIcon className="h-5 w-5 sm:h-8 sm:w-8" />
+              {firstName && <span className="hidden sm:inline text-xs sm:text-sm font-semibold">{firstName}</span>}
             </Link>
           </div>
         </div>
       </div>
 
       {/* category row */}
-      <div className="bg-gray-50 text-gray-600 border-t border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-4 sm:space-x-6 overflow-x-auto py-2 text-sm">
+      <div className="bg-gray-50 text-gray-600 border-t border-gray-200 w-full overflow-x-auto">
+        <div className="w-full px-3 sm:px-6 lg:px-8">
+          <div className="flex space-x-2 sm:space-x-6 py-2 text-xs sm:text-sm whitespace-nowrap overflow-x-auto">
             {categories.map((cat) => (
               <Link
                 key={cat}
@@ -126,7 +126,7 @@ export default function Navbar() {
                   .toLowerCase()
                   .replace(/ & /g, "-")
                   .replace(/ /g, "-")}`}
-                className="text-xs sm:text-sm whitespace-nowrap hover:text-orange-600 transition"
+                className="hover:text-orange-600 transition py-1 px-1 flex-shrink-0"
               >
                 {cat}
               </Link>
