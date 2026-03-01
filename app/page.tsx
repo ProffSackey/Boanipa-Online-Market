@@ -19,7 +19,7 @@ export default function Home() {
   // mapping for featured category images
   const categoryImages: Record<string, string> = {
     Appliances: "/appliances.jpeg",
-    grocessories: "/grocessories.jpeg",
+    Grocessories: "/grocessories.jpeg",
     "Health & Beauty": "/This health.jpeg",
   };
   const [trendingProducts, setTrendingProducts] = useState<Product[]>([]);
@@ -59,7 +59,7 @@ export default function Home() {
 
       {/* Featured Categories - Hidden on mobile */}
       <div className="hidden text-gray-700 md:block px-4 sm:px-6 md:px-8 py-8 sm:py-12 max-w-7xl mx-auto">
-        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-6 sm:mb-8">Featured Categories</h2>
+        <h2 className="text-2xl sm:text-2xl md:text-3xl font-bold mb-6 sm:mb-8">Featured Categories</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {categories.length > 0 ? (
             categories.slice(0, 3).map((cat, idx) => (
@@ -87,7 +87,7 @@ export default function Home() {
 
       {/* Trending Products */}
       <div className="px-4 sm:px-6 text-gray-700 md:px-8 py-8 sm:py-12 max-w-7xl mx-auto">
-        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-6 sm:mb-8">Trending Products</h2>
+        <h2 className="text-2xl sm:text-2xl md:text-3xl font-bold mb-6 sm:mb-8">Trending Products</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {trendingProducts.length > 0 ? (
             trendingProducts.map((p) => (
@@ -135,7 +135,7 @@ export default function Home() {
       {/* New Stock Alert */}
       <div className="px-4 sm:px-6 text-gray-700 md:px-8 py-8 sm:py-12 max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6 sm:mb-8">
-          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold">New Stock Alert</h2>
+          <h2 className="text-2xl sm:text-2xl md:text-3xl font-bold">New Stock Alert</h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {newStockProducts.length > 0 ? (
@@ -184,7 +184,7 @@ export default function Home() {
 
       {/* Featured Products */}
       <div className="px-4 sm:px-6 text-gray-700 md:px-8 py-8 sm:py-12 max-w-7xl mx-auto">
-        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-6 sm:mb-8">Featured Products</h2>
+        <h2 className="text-2xl sm:text-2xl md:text-3xl font-bold mb-6 sm:mb-8">Featured Products</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {trendingProducts.length > 0 ? (
             trendingProducts.slice(0, 8).map((p) => (
