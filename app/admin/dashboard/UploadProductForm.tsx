@@ -13,7 +13,7 @@ export default function UploadProductForm({ refreshCategories, categories = [], 
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
+  const [imageData, setImageData] = useState(''); // base64 or URL
   const [stock, setStock] = useState('');
   const [message, setMessage] = useState('');
 
@@ -23,7 +23,14 @@ export default function UploadProductForm({ refreshCategories, categories = [], 
     const res = await fetch('/api/admin/products', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, description, price: parseFloat(price), category, image_url: imageUrl, stock: stock ? parseInt(stock) : 0 }),
+      body: JSON.stringify({
+        name,
+        description,
+        price: parseFloat(price),
+        category,
+        image_url: imageData,
+        stock: stock ? parseInt(stock) : 0,
+      }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -34,7 +41,7 @@ export default function UploadProductForm({ refreshCategories, categories = [], 
       setDescription('');
       setPrice('');
       setCategory('');
-      setImageUrl('');
+      setImageData('');
       setStock('');
       refreshCategories();
       if (onSuccess) onSuccess();
@@ -43,8 +50,8 @@ export default function UploadProductForm({ refreshCategories, categories = [], 
 
   return (
     <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
-      <h2 className="text-lg font-bold mb-4">Add New Product</h2>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+      <h2 className="text-xl font-bold mb-6">Add New Product</h2>
+      <form onSubmit={handleSubmit} className="space-y-4">
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -91,22 +98,37 @@ export default function UploadProductForm({ refreshCategories, categories = [], 
             required
           />
         )}
-        <input
-          value={imageUrl}
-          onChange={(e) => setImageUrl(e.target.value)}
-          placeholder="Image URL"
-          className="border px-3 py-2 rounded"
-        />
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Product Image</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                const reader = new FileReader();
+                reader.onload = () => {
+                  setImageData(reader.result as string);
+                };
+                reader.readAsDataURL(file);
+              }
+            }}
+            className="border px-2 py-1 rounded w-full"
+          />
+          {imageData && (
+            <img src={imageData} alt="preview" className="mt-2 h-24 object-contain" />
+          )}
+        </div>
         <input
           value={stock}
           onChange={(e) => setStock(e.target.value)}
           placeholder="Stock Quantity"
           type="number"
-          className="border px-3 py-2 rounded"
+          className="border px-3 py-2 rounded w-full"
           required
         />
-        <button className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-          Upload
+        <button className="bg-blue-600 text-white px-5 py-3 rounded-md hover:bg-blue-700 w-full font-semibold">
+          Add Product
         </button>
         {message && <p className="text-sm mt-2">{message}</p>}
       </form>
