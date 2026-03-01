@@ -102,13 +102,13 @@ export default function Navbar() {
           {/* icons */}
           <div className="flex items-center gap-2 sm:gap-6 flex-shrink-0">
             <Link href="/notifications" className="text-gray-600 hover:text-gray-900 transition p-1">
-              <BellIcon className="h-6 w-6 sm:h-9 sm:w-9" />
+              <BellIcon className="h-7 w-7 sm:h-9 sm:w-9" />
             </Link>
             <Link href="/cart" className="text-gray-600 hover:text-gray-900 transition p-1">
-              <ShoppingCartIcon className="h-6 w-6 sm:h-9 sm:w-9" />
+              <ShoppingCartIcon className="h-7 w-7 sm:h-9 sm:w-9" />
             </Link>
             <Link href={user ? "/user" : "/login"} className="flex items-center gap-1 sm:gap-2 text-gray-600 hover:text-gray-900 transition p-1">
-              <UserCircleIcon className="h-6 w-6 sm:h-9 sm:w-9" />
+              <UserCircleIcon className="h-7 w-7 sm:h-9 sm:w-9" />
               {firstName && <span className="hidden sm:inline text-xs sm:text-sm font-semibold">{firstName}</span>}
             </Link>
           </div>
@@ -116,21 +116,21 @@ export default function Navbar() {
       </div>
 
       {/* Search bar for mobile - full-width centered row with icon */}
-      <div className="sm:hidden bg-gray-50 border-t border-gray-200 w-full px-3 py-3">
+      <div className="sm:hidden text-gray-600 bg-gray-50 border-t border-gray-200 w-full px-3 py-3">
         <div className="max-w-md mx-auto">
           <form className="flex items-center gap-3">
             <div className="relative flex-1">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
                 name="q"
                 placeholder="Search for products, categories..."
-                className="w-full pl-11 pr-4 py-3 rounded-full border border-gray-200 shadow-sm text-base focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full pl-11 pr-4 py-2 rounded-full border border-gray-200 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
             </div>
             <button
               type="submit"
-              className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-3 rounded-full font-semibold text-base flex-shrink-0"
+              className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-full font-semibold text-sm flex-shrink-0"
             >
               Search
             </button>

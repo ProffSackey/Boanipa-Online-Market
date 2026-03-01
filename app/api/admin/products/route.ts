@@ -5,11 +5,11 @@ import { getSupabaseAdmin } from '../../../../lib/supabaseClient';
 // helper to validate admin cookie
 async function requireAdmin() {
   const cookieStore = await cookies();
-  const token = cookieStore.get('sb-admin-token');
-  if (!token) {
-    return null;
-  }
-  return token.value;
+  const sb = cookieStore.get('sb-admin-token');
+  const session = cookieStore.get('admin_session');
+  if (sb) return sb.value;
+  if (session) return session.value;
+  return null;
 }
 
 export async function GET() {
