@@ -130,7 +130,7 @@ export default function AdminDashboard() {
       {/* sidebar */}
       <aside className="w-64 bg-white border-r border-gray-200 p-4 hidden md:flex md:flex-col">
         <h2 className="text-lg font-semibold mb-6">Menu</h2>
-        <nav className="space-y-3 text-gray-700 text-base flex-1">
+        <nav className="space-y-3 text-gray-700 text-base">
           <a href="/admin/dashboard" className="block px-3 py-2 rounded hover:bg-gray-100 font-medium">Dashboard Overview</a>
           <a href="/admin/users" className="block px-3 py-2 rounded hover:bg-gray-100 font-medium">Users</a>
           <a href="/admin/orders" className="block px-3 py-2 rounded hover:bg-gray-100 font-medium">Orders</a>
@@ -141,7 +141,7 @@ export default function AdminDashboard() {
         </nav>
         <button
           onClick={handleLogout}
-          className="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-semibold transition duration-200 mt-4"
+          className="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-semibold transition duration-200 mt-2"
         >
           Logout
         </button>
