@@ -101,14 +101,14 @@ export default function Navbar() {
 
           {/* icons */}
           <div className="flex items-center gap-2 sm:gap-6 flex-shrink-0">
-            <Link href="/notifications" className="text-gray-600 hover:text-gray-900 transition p-0.5">
-              <BellIcon className="h-5 w-5 sm:h-8 sm:w-8" />
+            <Link href="/notifications" className="text-gray-600 hover:text-gray-900 transition p-1">
+              <BellIcon className="h-6 w-6 sm:h-9 sm:w-9" />
             </Link>
-            <Link href="/cart" className="text-gray-600 hover:text-gray-900 transition p-0.5">
-              <ShoppingCartIcon className="h-5 w-5 sm:h-8 sm:w-8" />
+            <Link href="/cart" className="text-gray-600 hover:text-gray-900 transition p-1">
+              <ShoppingCartIcon className="h-6 w-6 sm:h-9 sm:w-9" />
             </Link>
-            <Link href={user ? "/user" : "/login"} className="flex items-center gap-0.5 sm:gap-2 text-gray-600 hover:text-gray-900 transition p-0.5">
-              <UserCircleIcon className="h-5 w-5 sm:h-8 sm:w-8" />
+            <Link href={user ? "/user" : "/login"} className="flex items-center gap-1 sm:gap-2 text-gray-600 hover:text-gray-900 transition p-1">
+              <UserCircleIcon className="h-6 w-6 sm:h-9 sm:w-9" />
               {firstName && <span className="hidden sm:inline text-xs sm:text-sm font-semibold">{firstName}</span>}
             </Link>
           </div>
