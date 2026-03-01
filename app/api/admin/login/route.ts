@@ -8,13 +8,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Email and password required' }, { status: 400 });
     }
 
-    // If ADMIN_EMAIL and ADMIN_PASSWORD_HASH are set, allow local env-based auth
+    // If ADMIN_EMAIL and ADMIN_PASSWORD are set, allow local env-based auth
     const adminEmail = process.env.ADMIN_EMAIL;
-    const adminHash = process.env.ADMIN_PASSWORD_HASH;
+    const adminPassword = process.env.ADMIN_PASSWORD;
 
-    if (adminEmail && adminHash && email === adminEmail) {
-      const ok = await bcrypt.compare(password, adminHash);
+    console.log('[LOGIN] Email from request:', email);
+    console.log('[LOGIN] Admin email from env:', adminEmail);
+    console.log('[LOGIN] Email match:', email === adminEmail);
+    console.log('[LOGIN] Admin password exists:', !!adminPassword);
+
+    if (adminEmail && adminPassword && email === adminEmail) {
+      console.log('[LOGIN] Checking password...');
+      const ok = password === adminPassword;
+      console.log('[LOGIN] Password match:', ok);
+      
       if (!ok) {
+        console.log('[LOGIN] Password mismatch');
         return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
       }
 
@@ -45,8 +54,12 @@ export async function POST(req: Request) {
     );
 
     const signInJson = await tokenRes.json();
+    
+    console.log('[LOGIN] Supabase response status:', tokenRes.status);
+    console.log('[LOGIN] Supabase response:', signInJson);
 
     if (!tokenRes.ok || !signInJson?.access_token) {
+      console.log('[LOGIN] Auth failed for email:', email);
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
 
