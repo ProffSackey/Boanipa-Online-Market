@@ -141,7 +141,7 @@ export default function Navbar() {
       {/* category row */}
       <div className="bg-gray-50 text-gray-600 border-t border-gray-200 w-full overflow-x-auto">
         <div className="w-full px-2 sm:px-6 lg:px-8">
-          <div className="flex space-x-2 sm:space-x-6 py-2 text-[25px] sm:text-sm whitespace-nowrap overflow-x-auto scrollbar-hide">
+          <div className="flex space-x-2 sm:space-x-6 py-2 text-[15px] sm:text-sm whitespace-nowrap overflow-x-auto scrollbar-hide">
             {categories.map((cat) => (
               <Link
                 key={cat}
