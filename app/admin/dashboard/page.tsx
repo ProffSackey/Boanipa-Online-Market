@@ -128,23 +128,38 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 sm:px-6 md:px-8 py-6 sm:py-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Admin Dashboard</h1>
-            <p className="text-sm sm:text-base text-gray-600 mt-1">Manage categories and products</p>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white px-6 py-3 sm:py-2 rounded-lg font-semibold transition duration-200"
-          >
-            Logout
-          </button>
-        </div>
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* sidebar */}
+      <aside className="w-64 bg-white border-r border-gray-200 p-4 hidden md:block">
+        <h2 className="text-lg font-semibold mb-4">Menu</h2>
+        <nav className="space-y-2 text-gray-700 text-sm">
+          <a href="/admin/dashboard" className="block px-2 py-1 rounded hover:bg-gray-100">Dashboard Overview</a>
+          <a href="/admin/users" className="block px-2 py-1 rounded hover:bg-gray-100">Users</a>
+          <a href="/admin/orders" className="block px-2 py-1 rounded hover:bg-gray-100">Orders</a>
+          <a href="/admin/products" className="block px-2 py-1 rounded hover:bg-gray-100">Products</a>
+          <a href="/admin/transactions" className="block px-2 py-1 rounded hover:bg-gray-100">Transactions</a>
+          <a href="/admin/analytics" className="block px-2 py-1 rounded hover:bg-gray-100">Analytics</a>
+          <a href="/admin/reviews" className="block px-2 py-1 rounded hover:bg-gray-100">Reviews</a>
+        </nav>
+      </aside>
 
-        {/* Add Category Form */}
+      <div className="flex-1 px-4 sm:px-6 md:px-8 py-6 sm:py-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Admin Dashboard</h1>
+              <p className="text-sm sm:text-base text-gray-600 mt-1">Manage categories and products</p>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white px-6 py-3 sm:py-2 rounded-lg font-semibold transition duration-200"
+            >
+              Logout
+            </button>
+          </div>
+
+          {/* Add Category Form */}
         <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6 sm:mb-8">
           <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4">Add New Category</h2>
           <form onSubmit={addCategory} className="flex flex-col sm:flex-row gap-3">
