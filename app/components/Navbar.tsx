@@ -71,9 +71,9 @@ export default function Navbar() {
 
   return (
     <nav className="bg-white shadow sticky top-0 z-50 w-full">
-      {/* top row with logo, search, icons */}
+      {/* top row with logo and icons - visible on all screens */}
       <div className="w-full px-2 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-14 sm:h-16 gap-1">
+        <div className="flex items-center justify-between h-14 sm:h-16 gap-2">
           {/* logo */}
           <div className="flex-shrink-0">
             <Link href="/" className="text-lg sm:text-2xl text-gray-800 font-bold whitespace-nowrap">
@@ -81,18 +81,18 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* search box - compact on mobile, full on larger screens */}
-          <div className="flex-1 flex items-center text-gray-600 mx-1 sm:mx-2 md:mx-4">
-            <form className="flex items-center w-full max-w-2xl">
+          {/* search box - hidden on mobile, visible on sm and up */}
+          <div className="hidden sm:flex flex-1 justify-center text-gray-600 mx-2 md:mx-4">
+            <form className="flex items-center max-w-2xl w-full">
               <input
                 type="text"
                 name="q"
                 placeholder="Search..."
-                className="flex-grow border rounded-full py-1 sm:py-2 px-3 sm:px-4 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 h-8 sm:h-10"
+                className="flex-grow border rounded-full py-2 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
               <button
                 type="submit"
-                className="ml-1 sm:ml-2 px-2 sm:px-4 py-1 sm:py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 text-xs sm:text-sm h-8 sm:h-10 flex items-center"
+                className="ml-2 px-4 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
               >
                 Search
               </button>
@@ -100,7 +100,7 @@ export default function Navbar() {
           </div>
 
           {/* icons */}
-          <div className="flex items-center gap-1 sm:gap-4 flex-shrink-0 ml-1">
+          <div className="flex items-center gap-2 sm:gap-6 flex-shrink-0">
             <Link href="/notifications" className="text-gray-600 hover:text-gray-900 transition p-0.5">
               <BellIcon className="h-5 w-5 sm:h-8 sm:w-8" />
             </Link>
@@ -113,6 +113,24 @@ export default function Navbar() {
             </Link>
           </div>
         </div>
+      </div>
+
+      {/* Search bar for mobile - visible only on mobile */}
+      <div className="sm:hidden bg-gray-50 border-t border-gray-200 w-full px-2 py-2">
+        <form className="flex items-center gap-1">
+          <input
+            type="text"
+            name="q"
+            placeholder="Search..."
+            className="flex-grow border border-gray-300 rounded-full py-2 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+          />
+          <button
+            type="submit"
+            className="px-3 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm flex-shrink-0"
+          >
+            Go
+          </button>
+        </form>
       </div>
 
       {/* category row */}
