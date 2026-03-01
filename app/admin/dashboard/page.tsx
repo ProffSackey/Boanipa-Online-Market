@@ -4,24 +4,23 @@ import { useEffect, useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import UploadProductForm from './UploadProductForm';
 
+interface Product {
+  id: number;
+  name: string;
+  description?: string;
+  price: number;
+  category: string;
+  image_url?: string;
+  stock?: number;
+}
+
 export default function AdminDashboard() {
   const router = useRouter();
   const [categories, setCategories] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState('');
   const [editing, setEditing] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
-  // ensure we only show dashboard after verifying session
   const [sessionChecked, setSessionChecked] = useState(false);
-
-  interface Product {
-    id: number;
-    name: string;
-    description?: string;
-    price: number;
-    category: string;
-    image_url?: string;
-    stock?: number;
-  }
   const [products, setProducts] = useState<Product[]>([]);
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const [productEdits, setProductEdits] = useState<Partial<Product>>({});
@@ -43,7 +42,6 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    // Check if admin session cookie exists
     fetch('/api/admin/verify-session')
       .then((res) => {
         if (!res.ok) {
@@ -160,192 +158,194 @@ export default function AdminDashboard() {
           </div>
 
           {/* Add Category Form */}
-        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6 sm:mb-8">
-          <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4">Add New Category</h2>
-          <form onSubmit={addCategory} className="flex flex-col sm:flex-row gap-3">
-            <input
-              value={newCategory}
-              onChange={(e) => setNewCategory(e.target.value)}
-              placeholder="Enter category name"
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
-            />
-            <button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-200">
-              Add Category
-            </button>
-          </form>
-        </div>
-
-        {/* Upload Product Form */}
-        <UploadProductForm
-          refreshCategories={fetchCats}
-          categories={categories}
-          onSuccess={fetchProducts}
-        />
-
-        {/* Products List */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-          <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-800">Products</h2>
+          <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6 sm:mb-8">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4">Add New Category</h2>
+            <form onSubmit={addCategory} className="flex flex-col sm:flex-row gap-3">
+              <input
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+                placeholder="Enter category name"
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+              />
+              <button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-200">
+                Add Category
+              </button>
+            </form>
           </div>
-          <ul className="divide-y divide-gray-200">
-            {products.map((p) => (
-              <li key={p.id} className="px-4 sm:px-6 py-4 sm:py-5 hover:bg-gray-50 transition">
-                {editingProductId === p.id ? (
-                  <div className="flex flex-col gap-3">
-                    <input
-                      value={productEdits.name || ''}
-                      onChange={(e) => setProductEdits({ ...productEdits, name: e.target.value })}
-                      className="px-3 py-2 border border-gray-300 rounded-lg"
-                      placeholder="Name"
-                    />
-                    <textarea
-                      value={productEdits.description || ''}
-                      onChange={(e) => setProductEdits({ ...productEdits, description: e.target.value })}
-                      className="px-3 py-2 border border-gray-300 rounded-lg"
-                      placeholder="Description"
-                      rows={2}
-                    />
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={productEdits.price !== undefined ? productEdits.price : ''}
-                      onChange={(e) => setProductEdits({ ...productEdits, price: parseFloat(e.target.value) })}
-                      className="px-3 py-2 border border-gray-300 rounded-lg"
-                      placeholder="Price"
-                    />
-                    <select
-                      value={productEdits.category || ''}
-                      onChange={(e) => setProductEdits({ ...productEdits, category: e.target.value })}
-                      className="px-3 py-2 border border-gray-300 rounded-lg"
-                    >
-                      <option value="">Category</option>
-                      {categories.map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      value={productEdits.image_url || ''}
-                      onChange={(e) => setProductEdits({ ...productEdits, image_url: e.target.value })}
-                      className="px-3 py-2 border border-gray-300 rounded-lg"
-                      placeholder="Image URL"
-                    />
-                    <input
-                      type="number"
-                      value={productEdits.stock !== undefined ? productEdits.stock : ''}
-                      onChange={(e) => setProductEdits({ ...productEdits, stock: parseInt(e.target.value) })}
-                      className="px-3 py-2 border border-gray-300 rounded-lg"
-                      placeholder="Stock Quantity"
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => updateProduct(p.id)}
-                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold"
-                      >
-                        Save
-                      </button>
-                      <button
-                        onClick={() => setEditingProductId(null)}
-                        className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg font-semibold"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <span className="font-semibold text-gray-800">
-                      {p.name} – {p.category} – ${p.price} – Stock: {p.stock || 0}
-                    </span>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          setEditingProductId(p.id);
-                          setProductEdits({
-                            name: p.name,
-                            description: p.description,
-                            price: p.price,
-                            category: p.category,
-                            image_url: p.image_url,
-                            stock: p.stock,
-                          });
-                        }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold text-sm sm:text-base"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => deleteProduct(p.id)}
-                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold text-sm sm:text-base"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
 
-        {/* Categories List */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-800">Categories</h2>
+          {/* Upload Product Form */}
+          <UploadProductForm
+            refreshCategories={fetchCats}
+            categories={categories}
+            onSuccess={fetchProducts}
+          />
+
+          {/* Products List */}
+          <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800">Products</h2>
+            </div>
+            <ul className="divide-y divide-gray-200">
+              {products.map((p) => (
+                <li key={p.id} className="px-4 sm:px-6 py-4 sm:py-5 hover:bg-gray-50 transition">
+                  {editingProductId === p.id ? (
+                    <div className="flex flex-col gap-3">
+                      <input
+                        value={productEdits.name || ''}
+                        onChange={(e) => setProductEdits({ ...productEdits, name: e.target.value })}
+                        className="px-3 py-2 border border-gray-300 rounded-lg"
+                        placeholder="Name"
+                      />
+                      <textarea
+                        value={productEdits.description || ''}
+                        onChange={(e) => setProductEdits({ ...productEdits, description: e.target.value })}
+                        className="px-3 py-2 border border-gray-300 rounded-lg"
+                        placeholder="Description"
+                        rows={2}
+                      />
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={productEdits.price !== undefined ? productEdits.price : ''}
+                        onChange={(e) => setProductEdits({ ...productEdits, price: parseFloat(e.target.value) })}
+                        className="px-3 py-2 border border-gray-300 rounded-lg"
+                        placeholder="Price"
+                      />
+                      <select
+                        value={productEdits.category || ''}
+                        onChange={(e) => setProductEdits({ ...productEdits, category: e.target.value })}
+                        className="px-3 py-2 border border-gray-300 rounded-lg"
+                      >
+                        <option value="">Category</option>
+                        {categories.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        value={productEdits.image_url || ''}
+                        onChange={(e) => setProductEdits({ ...productEdits, image_url: e.target.value })}
+                        className="px-3 py-2 border border-gray-300 rounded-lg"
+                        placeholder="Image URL"
+                      />
+                      <input
+                        type="number"
+                        value={productEdits.stock !== undefined ? productEdits.stock : ''}
+                        onChange={(e) => setProductEdits({ ...productEdits, stock: parseInt(e.target.value) })}
+                        className="px-3 py-2 border border-gray-300 rounded-lg"
+                        placeholder="Stock Quantity"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => updateProduct(p.id)}
+                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setEditingProductId(null)}
+                          className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg font-semibold"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <span className="font-semibold text-gray-800">
+                        {p.name} – {p.category} – ${p.price} – Stock: {p.stock || 0}
+                      </span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setEditingProductId(p.id);
+                            setProductEdits({
+                              name: p.name,
+                              description: p.description,
+                              price: p.price,
+                              category: p.category,
+                              image_url: p.image_url,
+                              stock: p.stock,
+                            });
+                          }}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold text-sm sm:text-base"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => deleteProduct(p.id)}
+                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold text-sm sm:text-base"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
           </div>
-          <ul className="divide-y divide-gray-200">
-            {categories.map((cat) => (
-              <li key={cat} className="px-4 sm:px-6 py-4 sm:py-5 hover:bg-gray-50 transition">
-                {editing === cat ? (
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <input
-                      value={editValue}
-                      onChange={(e) => setEditValue(e.target.value)}
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => updateCategory(cat)}
-                        className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition"
-                      >
-                        Save
-                      </button>
-                      <button
-                        onClick={() => setEditing(null)}
-                        className="flex-1 sm:flex-none bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg font-semibold transition"
-                      >
-                        Cancel
-                      </button>
+
+          {/* Categories List */}
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-800">Categories</h2>
+            </div>
+            <ul className="divide-y divide-gray-200">
+              {categories.map((cat) => (
+                <li key={cat} className="px-4 sm:px-6 py-4 sm:py-5 hover:bg-gray-50 transition">
+                  {editing === cat ? (
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <input
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => updateCategory(cat)}
+                          className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setEditing(null)}
+                          className="flex-1 sm:flex-none bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg font-semibold transition"
+                        >
+                          Cancel
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <span className="text-base sm:text-lg font-semibold text-gray-800">{cat}</span>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          setEditing(cat);
-                          setEditValue(cat);
-                        }}
-                        className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold text-sm sm:text-base transition"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => deleteCategory(cat)}
-                        className="flex-1 sm:flex-none bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold text-sm sm:text-base transition"
-                      >
-                        Delete
-                      </button>
+                  ) : (
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <span className="text-base sm:text-lg font-semibold text-gray-800">{cat}</span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setEditing(cat);
+                            setEditValue(cat);
+                          }}
+                          className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold text-sm sm:text-base transition"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => deleteCategory(cat)}
+                          className="flex-1 sm:flex-none bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold text-sm sm:text-base transition"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </li>
-            ))}
-          </ul>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
     </div>
   );
 }
+
