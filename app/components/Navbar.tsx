@@ -140,18 +140,12 @@ export default function Navbar() {
                 className="w-full pl-11 pr-4 py-2 rounded-full border border-gray-200 shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
             </div>
-            <button
-              type="submit"
-              className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-full font-semibold text-sm flex-shrink-0"
-            >
-              Search
-            </button>
           </form>
         </div>
       </div>
 
       {/* category row (hidden on mobile; categories available via menu) */}
-      <div className="hidden sm:block bg-gray-50 text-gray-600 border-t border-gray-200 w-full overflow-x-auto">
+      <div className="hidden sm:block text-gray-700 bg-gray-50 border-t border-gray-200 w-full overflow-x-auto">
         <div className="w-full px-2 sm:px-6 lg:px-8">
           <div className="flex space-x-2 sm:space-x-6 py-2 text-[15px] sm:text-sm whitespace-nowrap overflow-x-auto scrollbar-hide">
             {categories.map((cat) => (
@@ -178,9 +172,9 @@ export default function Navbar() {
             <button className="absolute top-3 right-3 p-1 text-gray-600 hover:text-gray-900" onClick={() => setMobileMenuOpen(false)} aria-label="Close menu">
               <XMarkIcon className="h-6 w-6" />
             </button>
-            <h3 className="text-lg font-semibold mb-3">Categories</h3>
+            <h3 className="text-lg font-semibold text-gray-700 mb-3">Categories</h3>
             <nav>
-              <ul className="space-y-2">
+              <ul className="space-y-2 text-gray-700">
                 {categories.length === 0 && <li className="text-sm text-gray-500">No categories</li>}
                 {categories.map((cat) => (
                   <li key={cat}>
