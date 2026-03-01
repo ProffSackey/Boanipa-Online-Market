@@ -23,7 +23,13 @@ export default function Home() {
     fetch('/api/categories')
       .then((r) => r.json())
       .then((data) => {
-        if (Array.isArray(data)) setCategories(data);
+        if (Array.isArray(data)) {
+          // rename legacy category if present
+          const normalized = data.map((c: string) =>
+            c === 'Electronics & Computing' ? 'grocessories' : c
+          );
+          setCategories(normalized);
+        }
       })
       .catch(console.error);
 
@@ -46,7 +52,7 @@ export default function Home() {
       <HeroCarousel />
 
       {/* Featured Categories - Hidden on mobile */}
-      <div className="hidden md:block px-4 sm:px-6 md:px-8 py-8 sm:py-12 max-w-7xl mx-auto">
+      <div className="hidden text-gray-700 md:block px-4 sm:px-6 md:px-8 py-8 sm:py-12 max-w-7xl mx-auto">
         <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-6 sm:mb-8">Featured Categories</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {categories.length > 0 ? (
@@ -64,7 +70,7 @@ export default function Home() {
       </div>
 
       {/* Trending Products */}
-      <div className="px-4 sm:px-6 md:px-8 py-8 sm:py-12 max-w-7xl mx-auto">
+      <div className="px-4 sm:px-6 text-gray-700 md:px-8 py-8 sm:py-12 max-w-7xl mx-auto">
         <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-6 sm:mb-8">Trending Products</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {trendingProducts.length > 0 ? (
@@ -111,7 +117,7 @@ export default function Home() {
       </div>
 
       {/* New Stock Alert */}
-      <div className="px-4 sm:px-6 md:px-8 py-8 sm:py-12 max-w-7xl mx-auto">
+      <div className="px-4 sm:px-6 text-gray-700 md:px-8 py-8 sm:py-12 max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6 sm:mb-8">
           <h2 className="text-xl sm:text-2xl md:text-3xl font-bold">New Stock Alert</h2>
         </div>
@@ -161,7 +167,7 @@ export default function Home() {
       </div>
 
       {/* Featured Products */}
-      <div className="px-4 sm:px-6 md:px-8 py-8 sm:py-12 max-w-7xl mx-auto">
+      <div className="px-4 sm:px-6 text-gray-700 md:px-8 py-8 sm:py-12 max-w-7xl mx-auto">
         <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-6 sm:mb-8">Featured Products</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {trendingProducts.length > 0 ? (
