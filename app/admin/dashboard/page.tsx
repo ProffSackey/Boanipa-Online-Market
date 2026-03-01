@@ -70,71 +70,95 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-        <button
-          onClick={handleLogout}
-          className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
-        >
-          Logout
-        </button>
+    <div className="min-h-screen bg-gray-50 px-4 sm:px-6 md:px-8 py-6 sm:py-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Admin Dashboard</h1>
+            <p className="text-sm sm:text-base text-gray-600 mt-1">Manage categories and products</p>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white px-6 py-3 sm:py-2 rounded-lg font-semibold transition duration-200"
+          >
+            Logout
+          </button>
+        </div>
+
+        {/* Add Category Form */}
+        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6 sm:mb-8">
+          <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4">Add New Category</h2>
+          <form onSubmit={addCategory} className="flex flex-col sm:flex-row gap-3">
+            <input
+              value={newCategory}
+              onChange={(e) => setNewCategory(e.target.value)}
+              placeholder="Enter category name"
+              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
+            />
+            <button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-200">
+              Add Category
+            </button>
+          </form>
+        </div>
+
+        {/* Categories List */}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800">Categories</h2>
+          </div>
+          <ul className="divide-y divide-gray-200">
+            {categories.map((cat) => (
+              <li key={cat} className="px-4 sm:px-6 py-4 sm:py-5 hover:bg-gray-50 transition">
+                {editing === cat ? (
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <input
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => updateCategory(cat)}
+                        className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => setEditing(null)}
+                        className="flex-1 sm:flex-none bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg font-semibold transition"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <span className="text-base sm:text-lg font-semibold text-gray-800">{cat}</span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setEditing(cat);
+                          setEditValue(cat);
+                        }}
+                        className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold text-sm sm:text-base transition"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => deleteCategory(cat)}
+                        className="flex-1 sm:flex-none bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold text-sm sm:text-base transition"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
-      <form onSubmit={addCategory} className="mb-4">
-        <input
-          value={newCategory}
-          onChange={(e) => setNewCategory(e.target.value)}
-          placeholder="New category"
-          className="border px-2 py-1 mr-2"
-        />
-        <button className="bg-blue-600 text-white px-3 py-1 rounded">Add</button>
-      </form>
-      <ul className="space-y-2">
-        {categories.map((cat) => (
-          <li key={cat} className="flex items-center space-x-2">
-            {editing === cat ? (
-              <>
-                <input
-                  value={editValue}
-                  onChange={(e) => setEditValue(e.target.value)}
-                  className="border px-2 py-1"
-                />
-                <button
-                  onClick={() => updateCategory(cat)}
-                  className="text-green-600"
-                >
-                  save
-                </button>
-                <button
-                  onClick={() => setEditing(null)}
-                  className="text-red-600"
-                >
-                  cancel
-                </button>
-              </>
-            ) : (
-              <>
-                <span>{cat}</span>
-                <button
-                  onClick={() => {
-                    setEditing(cat);
-                    setEditValue(cat);
-                  }}
-                  className="text-blue-600"
-                >
-                  edit
-                </button>
-                <button
-                  onClick={() => deleteCategory(cat)}
-                  className="text-red-600"
-                >
-                  delete
-                </button>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }

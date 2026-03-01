@@ -216,9 +216,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white p-6 text-gray-800 rounded shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-4 text-center text-orange-600">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-white px-4 sm:px-6 py-6 sm:py-8">
+      <div className="bg-white p-6 sm:p-8 text-gray-800 rounded-lg shadow-lg w-full max-w-md">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-center text-orange-600">
           {forgotPassword ? 'Reset Password' : signingUp ? 'Create an Account' : 'Sign In or Create Account'}
         </h1>
 
@@ -226,7 +226,7 @@ export default function LoginPage() {
           <>
             <button
               onClick={handleGoogle}
-              className="w-full flex items-center justify-center gap-2 border px-4 py-2 rounded mb-2 hover:bg-gray-100"
+              className="w-full flex items-center justify-center gap-3 border border-gray-300 px-4 py-3 sm:py-4 rounded-lg mb-4 hover:bg-gray-50 transition font-semibold text-sm sm:text-base"
             >
               {/* inline Google logo SVG */}
               <svg className="h-5 w-5" viewBox="0 0 533.5 544.3" xmlns="http://www.w3.org/2000/svg">
@@ -237,17 +237,17 @@ export default function LoginPage() {
               </svg>
               Continue with Google
             </button>
-            <div className="text-center my-3 text-gray-500">OR</div>
+            <div className="text-center my-4 text-gray-400 text-sm">OR</div>
           </>
         )}
 
         {forgotPassword ? (
-          <form onSubmit={handleForgotPassword} className="flex flex-col gap-3">
+          <form onSubmit={handleForgotPassword} className="flex flex-col gap-4 sm:gap-5">
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="border px-3 py-2 rounded"
+              className="w-full border border-gray-300 px-4 py-3 sm:py-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-base"
               placeholder="Enter your email address"
               disabled={loading || resetCooldown > 0}
               required
@@ -255,7 +255,7 @@ export default function LoginPage() {
             <button 
               type="submit" 
               disabled={loading || resetCooldown > 0}
-              className="w-full bg-orange-500 text-white py-2 rounded hover:bg-orange-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 sm:py-4 rounded-lg font-semibold transition duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed text-base sm:text-lg"
             >
               {loading ? 'Sending...' : resetCooldown > 0 ? `Resend in ${resetCooldown}s` : 'Send Reset Link'}
             </button>
@@ -266,18 +266,18 @@ export default function LoginPage() {
                 setMessage('');
                 setEmail('');
               }}
-              className="text-blue-600 text-sm hover:underline"
+              className="text-center text-blue-600 hover:underline font-semibold text-sm sm:text-base py-2 transition"
             >
               Back to Sign In
             </button>
           </form>
         ) : (
-          <form onSubmit={handleEmail} className="flex flex-col gap-3">
+          <form onSubmit={handleEmail} className="flex flex-col gap-4 sm:gap-5">
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="border px-3 py-2 rounded"
+              className="w-full border border-gray-300 px-4 py-3 sm:py-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-base"
               placeholder="Enter your email address"
               disabled={loading || (signingUp && signUpCooldown > 0)}
               required
@@ -287,7 +287,7 @@ export default function LoginPage() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="border px-3 py-2 rounded"
+                className="w-full border border-gray-300 px-4 py-3 sm:py-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-base"
                 placeholder="Choose a password"
                 disabled={loading || signUpCooldown > 0}
               />
@@ -295,7 +295,7 @@ export default function LoginPage() {
             <button 
               type="submit" 
               disabled={loading || (signingUp && signUpCooldown > 0)}
-              className="w-full bg-orange-500 text-white py-2 rounded hover:bg-orange-600 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 sm:py-4 rounded-lg font-semibold transition duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed text-base sm:text-lg"
             >
               {loading ? 'Processing...' : signingUp ? (signUpCooldown > 0 ? `Try again in ${signUpCooldown}s` : 'Create Account') : 'Check Account'}
             </button>
@@ -303,7 +303,7 @@ export default function LoginPage() {
         )}
 
         {message && (
-          <p className={`mt-4 text-center text-sm p-3 rounded ${
+          <p className={`mt-4 text-center text-sm sm:text-base p-3 sm:p-4 rounded-lg font-medium ${
             messageType === 'error' ? 'bg-red-100 text-red-700' :
             messageType === 'success' ? 'bg-green-100 text-green-700' :
             'bg-blue-100 text-blue-700'
@@ -313,11 +313,11 @@ export default function LoginPage() {
         )}
 
         {!forgotPassword && (
-          <div className="mt-4 border-t pt-4">
+          <div className="mt-6 sm:mt-8 border-t border-gray-200 pt-4 sm:pt-6">
             {signingUp ? (
-              <p className="text-center text-sm text-gray-600">
+              <p className="text-center text-sm sm:text-base text-gray-600">
                 Already have an account?{' '}
-                <button className="text-orange-500 hover:underline font-semibold" onClick={() => {
+                <button className="text-orange-500 hover:underline font-semibold transition" onClick={() => {
                   setSigningUp(false);
                   setPassword('');
                   setMessage('');
@@ -327,9 +327,9 @@ export default function LoginPage() {
               </p>
             ) : (
               <>
-                <p className="text-center text-sm mb-3">
+                <p className="text-center text-sm sm:text-base mb-3 sm:mb-4">
                   <button
-                    className="text-orange-500 hover:underline font-semibold"
+                    className="text-orange-500 hover:underline font-semibold transition"
                     onClick={() => {
                       setForgotPassword(true);
                       setMessage('');
@@ -338,9 +338,9 @@ export default function LoginPage() {
                     Forgot your password?
                   </button>
                 </p>
-                <p className="text-center text-sm text-gray-600">
+                <p className="text-center text-sm sm:text-base text-gray-600">
                   Don't have an account?{' '}
-                  <button className="text-orange-500 hover:underline font-semibold" onClick={() => {
+                  <button className="text-orange-500 hover:underline font-semibold transition" onClick={() => {
                     setSigningUp(true);
                     setMessage('');
                   }}>
