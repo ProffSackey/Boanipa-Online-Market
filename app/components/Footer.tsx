@@ -43,8 +43,23 @@ export default function Footer() {
                 </a>
               </li>
               <li>
-                <a href="/reset-password" className="hover:text-orange-600">
-                  Reset password
+                <a href="/terms" className="hover:text-orange-600">
+                  Terms &amp; Conditions
+                </a>
+              </li>
+              <li>
+                <a href="/shipping-policy" className="hover:text-orange-600">
+                  Shipping Policy
+                </a>
+              </li>
+              <li>
+                <a href="/refund-policy" className="hover:text-orange-600">
+                  Refund Policy
+                </a>
+              </li>
+              <li>
+                <a href="/about" className="hover:text-orange-600">
+                  About us
                 </a>
               </li>
               <li>
@@ -56,16 +71,19 @@ export default function Footer() {
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold text-gray-900">Follow</h4>
+            <h4 className="text-sm font-semibold text-gray-900">Subscribe</h4>
             <p className="mt-3 text-sm text-gray-600">
-              Stay connected — follow us on social media for updates and
-              promotions.
+              Get the latest deals and updates — subscribe to our newsletter.
             </p>
-            <div className="mt-4 flex space-x-3">
-              <a aria-label="Twitter" href="#" className="text-gray-500 hover:text-gray-900">Twitter</a>
-              <a aria-label="Facebook" href="#" className="text-gray-500 hover:text-gray-900">Facebook</a>
-              <a aria-label="Instagram" href="#" className="text-gray-500 hover:text-gray-900">Instagram</a>
-            </div>
+            <form className="mt-4 flex items-center max-w-xs">
+              <input
+                type="email"
+                name="email"
+                placeholder="you@example.com"
+                className="w-full px-3 py-2 rounded-l-md border border-gray-200 text-sm focus:outline-none"
+              />
+              <button className="bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-r-md text-sm">Subscribe</button>
+            </form>
           </div>
         </div>
 
