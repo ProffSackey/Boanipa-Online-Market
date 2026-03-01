@@ -70,19 +70,19 @@ export default function Navbar() {
   }, []);
 
   return (
-    <nav className="bg-white shadow">
+    <nav className="bg-white shadow sticky top-0 z-50">
       {/* top row with logo, search, icons */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center h-16">
+        <div className="flex items-center justify-between h-16 gap-2 sm:gap-4">
           {/* logo */}
           <div className="flex-shrink-0">
-            <Link href="/" className="text-2xl text-gray-800 font-bold">
+            <Link href="/" className="text-xl sm:text-2xl text-gray-800 font-bold">
               BOANIPA
             </Link>
           </div>
 
-          {/* search box */}
-          <div className="flex-1 flex justify-center text-gray-600 mx-4">
+          {/* search box - hidden on mobile, visible on sm and up */}
+          <div className="hidden sm:flex flex-1 justify-center text-gray-600 mx-2 md:mx-4">
             <form className="flex items-center max-w-2xl w-full">
               <input
                 type="text"
@@ -92,7 +92,7 @@ export default function Navbar() {
               />
               <button
                 type="submit"
-                className="ml-2 px-4 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="ml-2 px-4 py-2 bg-orange-500 text-white rounded-full hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm"
               >
                 Search
               </button>
@@ -100,25 +100,25 @@ export default function Navbar() {
           </div>
 
           {/* icons */}
-          <div className="flex items-center gap-6">
-            <Link href="/notifications" className="text-gray-600 hover:text-gray-900">
-              <BellIcon className="h-8 w-8" />
+          <div className="flex items-center gap-3 sm:gap-6">
+            <Link href="/notifications" className="text-gray-600 hover:text-gray-900 transition">
+              <BellIcon className="h-6 w-6 sm:h-8 sm:w-8" />
             </Link>
-            <Link href="/cart" className="text-gray-600 hover:text-gray-900">
-              <ShoppingCartIcon className="h-8 w-8" />
+            <Link href="/cart" className="text-gray-600 hover:text-gray-900 transition">
+              <ShoppingCartIcon className="h-6 w-6 sm:h-8 sm:w-8" />
             </Link>
-            <Link href={user ? "/user" : "/login"} className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
-              <UserCircleIcon className="h-8 w-8" />
-              {firstName && <span className="text-sm">{firstName}</span>}
+            <Link href={user ? "/user" : "/login"} className="flex items-center gap-1 sm:gap-2 text-gray-600 hover:text-gray-900 transition">
+              <UserCircleIcon className="h-6 w-6 sm:h-8 sm:w-8" />
+              {firstName && <span className="hidden xs:inline text-xs sm:text-sm font-semibold">{firstName}</span>}
             </Link>
           </div>
         </div>
       </div>
 
       {/* category row */}
-      <div className="bg-gray-50 text-gray-600">
+      <div className="bg-gray-50 text-gray-600 border-t border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-6 overflow-x-auto py-2">
+          <div className="flex space-x-4 sm:space-x-6 overflow-x-auto py-2 text-sm">
             {categories.map((cat) => (
               <Link
                 key={cat}
@@ -126,7 +126,7 @@ export default function Navbar() {
                   .toLowerCase()
                   .replace(/ & /g, "-")
                   .replace(/ /g, "-")}`}
-                className="text-sm whitespace-nowrap hover:underline"
+                className="text-xs sm:text-sm whitespace-nowrap hover:text-orange-600 transition"
               >
                 {cat}
               </Link>
