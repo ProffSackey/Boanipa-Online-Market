@@ -51,12 +51,12 @@ export default function CategoryPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8 sm:mb-12">
-          <h1 className="text-2xl sm:text-4xl font-bold text-gray-800 mb-2">{categoryName}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">{categoryName}</h1>
           <p className="text-base sm:text-lg text-gray-600">Browse our collection</p>
         </div>
 
         {/* Filters and Sort - Mobile Friendly */}
-        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6 sm:mb-8">
+        <div className="bg-white text-gray-700 rounded-lg shadow-md p-4 sm:p-6 mb-6 sm:mb-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Sort By</label>
