@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Image from "next/image";
 import { useRouter } from 'next/navigation';
 import HeroCarousel from "./components/HeroCarousel";
-import { fetchPromotions, fetchProducts, type Promotion as SupabasePromotion, type Product, addToCart } from '../lib/supabaseService';
+import { fetchPromotions, type Promotion as SupabasePromotion, type Product, addToCart } from '../lib/supabaseService';
 import { supabase } from '@/lib/supabaseClient';
 import { Promotion as UIPromotion, getProductPromotions, calculateDiscount, getFeaturedPromotions, getDiscountBadgeText, formatPrice, parsePrice } from '../lib/promotionUtils';
 
@@ -60,8 +60,10 @@ export default function Home() {
         setPromotions(promos);
         setFeaturedPromotions(getFeaturedPromotions(promos));
 
-        // Load products from Supabase
-        const prods = await fetchProducts();
+        // Load products from API endpoint (uses service role for proper RLS permissions)
+        const res = await fetch('/api/admin/products');
+        if (!res.ok) throw new Error('Failed to fetch products');
+        const prods = await res.json();
         setTrendingProducts(prods.slice(0, 6));
         setNewStockProducts(prods.slice(6, 12));
       } catch (error) {
