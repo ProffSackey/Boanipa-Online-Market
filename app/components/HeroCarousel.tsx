@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 
 type Slide = {
@@ -11,6 +12,7 @@ type Slide = {
 };
 
 export default function HeroCarousel() {
+  const router = useRouter();
   const slides: Slide[] = [
     { id: 1, title: "Welcome to BOANIPA", subtitle: "Your one-stop online marketplace", cta: "Start Shopping" },
     { id: 2, title: "Discover Great Deals", subtitle: "Daily discounts across categories", cta: "Shop Deals" },
@@ -18,6 +20,19 @@ export default function HeroCarousel() {
   ];
 
   const [index, setIndex] = useState(0);
+
+  const handleCTA = (slideId: number) => {
+    if (slideId === 1) {
+      // Start Shopping → featured products
+      router.push("#featured-products");
+    } else if (slideId === 2) {
+      // Shop Deals → promotions
+      router.push("#promotions");
+    } else if (slideId === 3) {
+      // Browse Products → featured products
+      router.push("#featured-products");
+    }
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -36,7 +51,19 @@ export default function HeroCarousel() {
               i === index ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
             }`}
           >
-            {/* background image for specific slide */}
+            {/* background images for slides */}
+            {s.id === 1 && (
+              <div className="absolute inset-0">
+                <Image
+                  src="/welcome.jpeg"
+                  alt="Welcome to BOANIPA"
+                  fill
+                  style={{ objectFit: "cover" }}
+                  className="object-cover"
+                  priority
+                />
+              </div>
+            )}
             {s.id === 3 && (
               <div className="absolute inset-0">
                 <Image
@@ -56,7 +83,7 @@ export default function HeroCarousel() {
               <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-3">{s.title}</h1>
               <p className="text-sm sm:text-base md:text-lg text-white mb-6">{s.subtitle}</p>
               {s.cta && (
-                <button className="bg-orange-500 hover:bg-orange-600 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-full font-semibold transition">
+                <button onClick={() => handleCTA(s.id)} className="bg-orange-500 hover:bg-orange-600 text-white px-6 sm:px-8 py-2 sm:py-3 rounded-full font-semibold transition">
                   {s.cta}
                 </button>
               )}

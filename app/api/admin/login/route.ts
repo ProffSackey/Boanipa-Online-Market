@@ -63,7 +63,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
 
-    const res = NextResponse.json({ ok: true });
+    const accessToken = signInJson?.access_token ?? '';
+    const refreshToken = signInJson?.refresh_token ?? '';
+    console.log('[LOGIN] Setting cookies with accessToken:', !!accessToken, 'refreshToken:', !!refreshToken);
+    
+    const res = NextResponse.json({ 
+      ok: true,
+      accessToken: accessToken, // Return token so client can send it as fallback
+      refreshToken: refreshToken, // supply refresh token for client session
+    });
     // set simple admin session flag
     res.cookies.set({
       name: 'admin_session',
@@ -75,9 +83,11 @@ export async function POST(req: Request) {
       maxAge: 60 * 60 * 24 * 7,
     });
 
+    console.log('[LOGIN] admin_session cookie set');
+    console.log('[LOGIN] Cookies after setting:', res.cookies.getAll().map(c => c.name));
+
     // also set sb-admin-token so server-side admin routes that check for
     // this cookie (existing code) see the Supabase access token
-    const accessToken = signInJson?.access_token ?? '';
     if (accessToken) {
       res.cookies.set({
         name: 'sb-admin-token',
@@ -88,8 +98,13 @@ export async function POST(req: Request) {
         path: '/',
         maxAge: 60 * 60 * 24 * 7,
       });
+      console.log('[LOGIN] sb-admin-token cookie set');
+      console.log('[LOGIN] Cookies now:', res.cookies.getAll().map(c => c.name));
+    } else {
+      console.log('[LOGIN] No access token to set sb-admin-token cookie');
     }
 
+    console.log('[LOGIN] Login successful for:', email);
     return res;
   } catch (err) {
     console.error('Admin login error:', err);

@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabaseClient';
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -19,6 +20,7 @@ export default function AdminLogin() {
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ email, password }),
       });
 
@@ -27,6 +29,32 @@ export default function AdminLogin() {
         setError(data.error || 'Login failed');
         setLoading(false);
         return;
+      }
+
+      const data = await res.json();
+      
+      console.log('[LOGIN_PAGE] Response received:', { ok: data.ok, hasAccessToken: !!data.accessToken });
+      
+      // Set up Supabase session with the tokens
+      if (data.accessToken) {
+        console.log('[LOGIN_PAGE] Setting Supabase session');
+        try {
+          // Set the session in Supabase client so it manages the auth state
+          await supabase.auth.setSession({
+            access_token: data.accessToken,
+            refresh_token: data.refreshToken || '',
+          });
+          console.log('[LOGIN_PAGE] Supabase session set successfully');
+        } catch (error) {
+          console.error('[LOGIN_PAGE] Error setting Supabase session:', error);
+        }
+      } else {
+        console.warn('[LOGIN_PAGE] No accessToken in login response');
+      }
+
+      // debug cookies in client after login
+      if (typeof document !== 'undefined') {
+        console.log('[LOGIN_PAGE] document.cookie after login:', document.cookie);
       }
 
       // Success — redirect to dashboard

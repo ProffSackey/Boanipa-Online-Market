@@ -7,7 +7,15 @@ if (!url || !anonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-export const supabase = createClient(url, anonKey);
+export const supabase = createClient(url, anonKey, {
+  auth: {
+    storageKey: 'sb-auth-token',
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+  },
+});
 
 // server-side client using service role key for privileged operations
 export const getSupabaseAdmin = () => {

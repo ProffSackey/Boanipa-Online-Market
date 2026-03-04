@@ -1,55 +1,19 @@
 "use client";
 
-import { useEffect, useState, FormEvent } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import UploadProductForm from './UploadProductForm';
-import {
-  HomeIcon,
-  UserIcon,
-  ClipboardIcon,
-  TagIcon,
-  CurrencyDollarIcon,
-  ChartBarIcon,
-  ChatBubbleLeftRightIcon,
-  ArrowRightOnRectangleIcon,
-} from '@heroicons/react/24/outline';
-
-interface Product {
-  id: number;
-  name: string;
-  description?: string;
-  price: number;
-  category: string;
-  image_url?: string;
-  stock?: number;
-}
+import AdminNavbar from '../../components/AdminNavbar';
+import DashboardOverview from '../../components/DashboardOverview';
+import RevenueChart from '../../components/RevenueChart';
+import SalesByCategory from '../../components/SalesByCategory';
+import RecentOrders from '../../components/RecentOrders';
+import TopProducts from '../../components/TopProducts';
+import { HomeIcon, UserGroupIcon, ShoppingCartIcon, CubeIcon, CreditCardIcon, ChartBarIcon, StarIcon, GiftIcon, BellIcon, EnvelopeIcon, CogIcon } from '@heroicons/react/24/outline';
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const [categories, setCategories] = useState<string[]>([]);
-  const [newCategory, setNewCategory] = useState('');
-  const [editing, setEditing] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState('');
   const [sessionChecked, setSessionChecked] = useState(false);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [editingProductId, setEditingProductId] = useState<number | null>(null);
-  const [productEdits, setProductEdits] = useState<Partial<Product>>({});
-
-  const fetchCats = () => {
-    fetch('/api/categories')
-      .then((r) => r.json())
-      .then(setCategories)
-      .catch(console.error);
-  };
-
-  const fetchProducts = () => {
-    fetch('/api/admin/products')
-      .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data)) setProducts(data);
-      })
-      .catch(console.error);
-  };
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     fetch('/api/admin/verify-session')
@@ -63,68 +27,7 @@ export default function AdminDashboard() {
       .catch(() => {
         router.push('/admin/login');
       });
-    
-    if (sessionChecked) {
-      fetchCats();
-      fetchProducts();
-    }
-  }, [router, sessionChecked]);
-
-  const addCategory = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!newCategory.trim()) return;
-    await fetch('/api/categories', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: newCategory.trim() }),
-    });
-    setNewCategory('');
-    fetchCats();
-  };
-
-  const updateCategory = async (oldName: string) => {
-    if (!editValue.trim()) return;
-    await fetch('/api/categories', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ oldName, newName: editValue.trim() }),
-    });
-    setEditing(null);
-    setEditValue('');
-    fetchCats();
-  };
-
-  const deleteCategory = async (name: string) => {
-    if (!confirm(`Remove category "${name}"?`)) return;
-    await fetch('/api/categories', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name }),
-    });
-    fetchCats();
-  };
-
-  const deleteProduct = async (id: number) => {
-    if (!confirm('Remove this product?')) return;
-    await fetch('/api/admin/products', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    });
-    fetchProducts();
-  };
-
-  const updateProduct = async (id: number) => {
-    if (editingProductId !== id) return;
-    await fetch('/api/admin/products', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, ...productEdits }),
-    });
-    setEditingProductId(null);
-    setProductEdits({});
-    fetchProducts();
-  };
+  }, [router]);
 
   const handleLogout = async () => {
     await fetch('/api/admin/logout', { method: 'POST' });
@@ -136,224 +39,78 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* sidebar */}
-      <aside className="w-64 text-gray-800 bg-white border-r border-gray-200 p-4 hidden md:flex md:flex-col">
-        <h2 className="text-lg font-semibold mb-6">Menu</h2>
-        <nav className="space-y-3 text-gray-700 text-base">
-          <a href="/admin/dashboard" className="block px-3 py-2 rounded hover:bg-gray-100 font-medium">Dashboard Overview</a>
-          <a href="/admin/users" className="block px-3 py-2 rounded hover:bg-gray-100 font-medium">Users</a>
-          <a href="/admin/orders" className="block px-3 py-2 rounded hover:bg-gray-100 font-medium">Orders</a>
-          <a href="/admin/products" className="block px-3 py-2 rounded hover:bg-gray-100 font-medium">Products</a>
-          <a href="/admin/transactions" className="block px-3 py-2 rounded hover:bg-gray-100 font-medium">Transactions</a>
-          <a href="/admin/analytics" className="block px-3 py-2 rounded hover:bg-gray-100 font-medium">Analytics</a>
-          <a href="/admin/reviews" className="block px-3 py-2 rounded hover:bg-gray-100 font-medium">Reviews</a>
-        </nav>
-        <button
-          onClick={handleLogout}
-          className="w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-semibold transition duration-200 mt-2"
-        >
-          Logout
-        </button>
-      </aside>
+    <div className="min-h-screen bg-gray-50">
+      <AdminNavbar onMenuToggle={setMobileMenuOpen} />
+      
+      <div className="flex">
+        {/* Desktop Sidebar */}
+        <aside className="w-64 text-gray-800 bg-white border-r border-gray-200 p-4 hidden md:flex md:flex-col">
+          <h2 className="text-lg font-semibold mb-6">Menu</h2>
+          <nav className="space-y-3 text-gray-700 text-base">
+            <a href="/admin/dashboard" className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-100 font-medium transition"><HomeIcon className="h-5 w-5" />Dashboard Overview</a>
+            <a href="/admin/customers" className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-100 font-medium transition"><UserGroupIcon className="h-5 w-5" />Customers</a>
+            <a href="/admin/orders" className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-100 font-medium transition"><ShoppingCartIcon className="h-5 w-5" />Orders</a>
+            <a href="/admin/products" className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-100 font-medium transition"><CubeIcon className="h-5 w-5" />Products</a>
+            <a href="/admin/transactions" className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-100 font-medium transition"><CreditCardIcon className="h-5 w-5" />Transactions</a>
+            <a href="/admin/analytics" className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-100 font-medium transition"><ChartBarIcon className="h-5 w-5" />Analytics</a>
+            <a href="/admin/reviews" className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-100 font-medium transition"><StarIcon className="h-5 w-5" />Reviews</a>
+            <a href="/admin/promotions" className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-100 font-medium transition"><GiftIcon className="h-5 w-5" />Promotions</a>
+            <a href="/admin/notifications" className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-100 font-medium transition"><BellIcon className="h-5 w-5" />Notifications</a>
+            <a href="/admin/messages" className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-100 font-medium transition"><EnvelopeIcon className="h-5 w-5" />Messages</a>
+            <a href="/admin/settings" className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-100 font-medium transition"><CogIcon className="h-5 w-5" />Settings</a>
+          </nav>
+        </aside>
 
-      <div className="flex-1 px-4 sm:px-6 md:px-8 py-6 sm:py-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-6 sm:mb-8">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Admin Dashboard</h1>
-            <p className="text-sm sm:text-base text-gray-600 mt-1">Manage categories and products</p>
-          </div>
-
-          {/* Add Category Form */}
-          <div className="bg-white text-gray-800 rounded-lg shadow-md p-4 sm:p-6 mb-6 sm:mb-8">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4">Add New Category</h2>
-            <form onSubmit={addCategory} className="flex flex-col sm:flex-row gap-3">
-              <input
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value)}
-                placeholder="Enter category name"
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-base"
-              />
-              <button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-200">
-                Add Category
-              </button>
-            </form>
-          </div>
-
-          {/* Upload Product Form */}
-          <UploadProductForm
-            refreshCategories={fetchCats}
-            categories={categories}
-            onSuccess={fetchProducts}
-          />
-
-          {/* Products List */}
-          <div className="bg-white text-gray-800 rounded-lg shadow-md overflow-hidden mb-6">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-800">Products</h2>
+        {/* Mobile Sidebar */}
+        {mobileMenuOpen && (
+          <div className="fixed inset-0 z-40 md:hidden flex">
+            <div className="w-64 bg-white border-r border-gray-200 p-4 flex flex-col shadow-lg">
+              <h2 className="text-lg font-semibold mb-6">Menu</h2>
+              <nav className="space-y-3 text-gray-700 text-base flex-1">
+                <a href="/admin/dashboard" className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-100 font-medium transition" onClick={() => setMobileMenuOpen(false)}><HomeIcon className="h-5 w-5" />Dashboard Overview</a>
+                <a href="/admin/customers" className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-100 font-medium transition" onClick={() => setMobileMenuOpen(false)}><UserGroupIcon className="h-5 w-5" />Customers</a>
+                <a href="/admin/orders" className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-100 font-medium transition" onClick={() => setMobileMenuOpen(false)}><ShoppingCartIcon className="h-5 w-5" />Orders</a>
+                <a href="/admin/products" className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-100 font-medium transition" onClick={() => setMobileMenuOpen(false)}><CubeIcon className="h-5 w-5" />Products</a>
+                <a href="/admin/transactions" className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-100 font-medium transition" onClick={() => setMobileMenuOpen(false)}><CreditCardIcon className="h-5 w-5" />Transactions</a>
+                <a href="/admin/analytics" className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-100 font-medium transition" onClick={() => setMobileMenuOpen(false)}><ChartBarIcon className="h-5 w-5" />Analytics</a>
+                <a href="/admin/reviews" className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-100 font-medium transition" onClick={() => setMobileMenuOpen(false)}><StarIcon className="h-5 w-5" />Reviews</a>
+                <a href="/admin/promotions" className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-100 font-medium transition" onClick={() => setMobileMenuOpen(false)}><GiftIcon className="h-5 w-5" />Promotions</a>
+                <a href="/admin/notifications" className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-100 font-medium transition" onClick={() => setMobileMenuOpen(false)}><BellIcon className="h-5 w-5" />Notifications</a>
+                <a href="/admin/messages" className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-100 font-medium transition" onClick={() => setMobileMenuOpen(false)}><EnvelopeIcon className="h-5 w-5" />Messages</a>
+                <a href="/admin/settings" className="flex items-center gap-3 px-3 py-2 rounded hover:bg-gray-100 font-medium transition" onClick={() => setMobileMenuOpen(false)}><CogIcon className="h-5 w-5" />Settings</a>
+              </nav>
             </div>
-            <ul className="divide-y divide-gray-200">
-              {products.map((p) => (
-                <li key={p.id} className="px-4 sm:px-6 py-4 sm:py-5 hover:bg-gray-50 transition">
-                  {editingProductId === p.id ? (
-                    <div className="flex flex-col gap-3">
-                      <input
-                        value={productEdits.name || ''}
-                        onChange={(e) => setProductEdits({ ...productEdits, name: e.target.value })}
-                        className="px-3 py-2 border border-gray-300 rounded-lg"
-                        placeholder="Name"
-                      />
-                      <textarea
-                        value={productEdits.description || ''}
-                        onChange={(e) => setProductEdits({ ...productEdits, description: e.target.value })}
-                        className="px-3 py-2 border border-gray-300 rounded-lg"
-                        placeholder="Description"
-                        rows={2}
-                      />
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={productEdits.price !== undefined ? productEdits.price : ''}
-                        onChange={(e) => setProductEdits({ ...productEdits, price: parseFloat(e.target.value) })}
-                        className="px-3 py-2 border border-gray-300 rounded-lg"
-                        placeholder="Price"
-                      />
-                      <select
-                        value={productEdits.category || ''}
-                        onChange={(e) => setProductEdits({ ...productEdits, category: e.target.value })}
-                        className="px-3 py-2 border border-gray-300 rounded-lg"
-                      >
-                        <option value="">Category</option>
-                        {categories.map((c) => (
-                          <option key={c} value={c}>
-                            {c}
-                          </option>
-                        ))}
-                      </select>
-                      <input
-                        value={productEdits.image_url || ''}
-                        onChange={(e) => setProductEdits({ ...productEdits, image_url: e.target.value })}
-                        className="px-3 py-2 border border-gray-300 rounded-lg"
-                        placeholder="Image URL"
-                      />
-                      <input
-                        type="number"
-                        value={productEdits.stock !== undefined ? productEdits.stock : ''}
-                        onChange={(e) => setProductEdits({ ...productEdits, stock: parseInt(e.target.value) })}
-                        className="px-3 py-2 border border-gray-300 rounded-lg"
-                        placeholder="Stock Quantity"
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => updateProduct(p.id)}
-                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold"
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={() => setEditingProductId(null)}
-                          className="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg font-semibold"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <span className="font-semibold text-gray-800">
-                        {p.name} – {p.category} – ${p.price} – Stock: {p.stock || 0}
-                      </span>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            setEditingProductId(p.id);
-                            setProductEdits({
-                              name: p.name,
-                              description: p.description,
-                              price: p.price,
-                              category: p.category,
-                              image_url: p.image_url,
-                              stock: p.stock,
-                            });
-                          }}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold text-sm sm:text-base"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => deleteProduct(p.id)}
-                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold text-sm sm:text-base"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ul>
+            <div className="flex-1" onClick={() => setMobileMenuOpen(false)}></div>
           </div>
+        )}
 
-          {/* Categories List */}
-          <div className="bg-white text-gray-800 rounded-lg shadow-md overflow-hidden">
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg sm:text-xl font-bold text-gray-800">Categories</h2>
+        {/* Main Content */}
+        <div className="flex-1 px-4 sm:px-6 md:px-8 py-6 sm:py-8">
+          <div className="max-w-7xl mx-auto space-y-6">
+            {/* Dashboard Overview with KPI Cards */}
+            <DashboardOverview />
+
+            {/* Revenue Chart */}
+            <RevenueChart />
+
+            {/* Two Column Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Sales by Category */}
+              <div className="lg:col-span-1">
+                <SalesByCategory />
+              </div>
+
+              {/* Top Products */}
+              <div className="lg:col-span-2">
+                <TopProducts />
+              </div>
             </div>
-            <ul className="divide-y divide-gray-200">
-              {categories.map((cat) => (
-                <li key={cat} className="px-4 sm:px-6 py-4 sm:py-5 hover:bg-gray-50 transition">
-                  {editing === cat ? (
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <input
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => updateCategory(cat)}
-                          className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold transition"
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={() => setEditing(null)}
-                          className="flex-1 sm:flex-none bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg font-semibold transition"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <span className="text-base sm:text-lg font-semibold text-gray-800">{cat}</span>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            setEditing(cat);
-                            setEditValue(cat);
-                          }}
-                          className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-semibold text-sm sm:text-base transition"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => deleteCategory(cat)}
-                          className="flex-1 sm:flex-none bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold text-sm sm:text-base transition"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ul>
+
+            {/* Recent Orders */}
+            <RecentOrders />
           </div>
         </div>
       </div>
     </div>
   );
 }
-

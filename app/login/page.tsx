@@ -31,51 +31,9 @@ export default function LoginPage() {
     });
   }, [router]);
 
-  // Check and restore cooldown timers from localStorage
+  // Cooldown timers are kept in component state only (no localStorage persistence)
   useEffect(() => {
-    // Reset password cooldown
-    const lastResetTime = localStorage.getItem('resetPasswordTime');
-    if (lastResetTime) {
-      const elapsed = Math.floor((Date.now() - parseInt(lastResetTime)) / 1000);
-      const remaining = Math.max(0, 60 - elapsed);
-      if (remaining > 0) {
-        setResetCooldown(remaining);
-        const cooldownInterval = setInterval(() => {
-          setResetCooldown((prev) => {
-            if (prev <= 1) {
-              clearInterval(cooldownInterval);
-              localStorage.removeItem('resetPasswordTime');
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
-      } else {
-        localStorage.removeItem('resetPasswordTime');
-      }
-    }
-
-    // Sign up cooldown
-    const lastSignUpTime = localStorage.getItem('signUpTime');
-    if (lastSignUpTime) {
-      const elapsed = Math.floor((Date.now() - parseInt(lastSignUpTime)) / 1000);
-      const remaining = Math.max(0, 60 - elapsed);
-      if (remaining > 0) {
-        setSignUpCooldown(remaining);
-        const cooldownInterval = setInterval(() => {
-          setSignUpCooldown((prev) => {
-            if (prev <= 1) {
-              clearInterval(cooldownInterval);
-              localStorage.removeItem('signUpTime');
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
-      } else {
-        localStorage.removeItem('signUpTime');
-      }
-    }
+    // nothing to restore on mount
   }, []);
 
   // Email validation function
@@ -108,24 +66,27 @@ export default function LoginPage() {
         return;
       }
       setLoading(true);
-      const { error } = await supabase.auth.signUp({ email, password });
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await response.json();
       setLoading(false);
-      if (error) {
-        setMessage(error.message);
+      
+      if (!response.ok) {
+        setMessage(data.error || 'Sign up failed');
         setMessageType('error');
       } else {
         setMessage('Account created! Check your email to verify.');
         setMessageType('success');
         
         // Set cooldown timer (60 seconds) for sign-up
-        localStorage.setItem('signUpTime', Date.now().toString());
         setSignUpCooldown(60);
-        
         const cooldownInterval = setInterval(() => {
           setSignUpCooldown((prev) => {
             if (prev <= 1) {
               clearInterval(cooldownInterval);
-              localStorage.removeItem('signUpTime');
               return 0;
             }
             return prev - 1;
@@ -198,15 +159,13 @@ export default function LoginPage() {
       setMessage('Password reset link sent to your email. Check your inbox.');
       setEmail('');
 
-      // Set cooldown timer (60 seconds) and store in localStorage
-      localStorage.setItem('resetPasswordTime', Date.now().toString());
+      // Set cooldown timer (60 seconds)
       setResetCooldown(60);
 
       const cooldownInterval = setInterval(() => {
         setResetCooldown((prev) => {
           if (prev <= 1) {
             clearInterval(cooldownInterval);
-            localStorage.removeItem('resetPasswordTime');
             return 0;
           }
           return prev - 1;

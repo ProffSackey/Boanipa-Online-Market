@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '../../../lib/supabaseClient';
+import { supabase, supabaseAdmin } from '../../../lib/supabaseClient';
 
 async function fetchCategories() {
   const { data, error } = await supabase
@@ -10,21 +10,37 @@ async function fetchCategories() {
 }
 
 async function insertCategory(name: string) {
-  const { error } = await supabase.from('categories').insert({ name });
-  if (error) throw error;
+  const db = supabaseAdmin || supabase;
+  const { data, error } = await db.from('categories').insert({ name }).select();
+  if (error) {
+    console.error('insertCategory error:', error);
+    throw error;
+  }
+  return data;
 }
 
 async function updateCategory(oldName: string, newName: string) {
-  const { error } = await supabase
+  const db = supabaseAdmin || supabase;
+  const { data, error } = await db
     .from('categories')
     .update({ name: newName })
-    .eq('name', oldName);
-  if (error) throw error;
+    .eq('name', oldName)
+    .select();
+  if (error) {
+    console.error('updateCategory error:', error);
+    throw error;
+  }
+  return data;
 }
 
 async function deleteCategory(name: string) {
-  const { error } = await supabase.from('categories').delete().eq('name', name);
-  if (error) throw error;
+  const db = supabaseAdmin || supabase;
+  const { data, error } = await db.from('categories').delete().eq('name', name).select();
+  if (error) {
+    console.error('deleteCategory error:', error);
+    throw error;
+  }
+  return data;
 }
 
 export async function GET() {
@@ -44,12 +60,14 @@ export async function POST(request: Request) {
     if (!name) {
       return NextResponse.json({ error: 'Name required' }, { status: 400 });
     }
-    await insertCategory(name);
+    const created = await insertCategory(name);
+    // return updated list (created may be array)
     const categories = await fetchCategories();
     return NextResponse.json(categories);
   } catch (err) {
-    console.error(err);
-    return NextResponse.error();
+    console.error('POST /api/categories error:', err);
+    // if Supabase returned an error with status, include it
+    return NextResponse.json({ error: (err as any).message || 'failed to create category' }, { status: 500 });
   }
 }
 
@@ -64,8 +82,8 @@ export async function PATCH(request: Request) {
     const categories = await fetchCategories();
     return NextResponse.json(categories);
   } catch (err) {
-    console.error(err);
-    return NextResponse.error();
+    console.error('PATCH /api/categories error:', err);
+    return NextResponse.json({ error: (err as any).message || 'failed to update category' }, { status: 500 });
   }
 }
 
@@ -79,7 +97,7 @@ export async function DELETE(request: Request) {
     const categories = await fetchCategories();
     return NextResponse.json(categories);
   } catch (err) {
-    console.error(err);
-    return NextResponse.error();
+    console.error('DELETE /api/categories error:', err);
+    return NextResponse.json({ error: (err as any).message || 'failed to delete category' }, { status: 500 });
   }
 }

@@ -65,8 +65,45 @@ export default function Navbar() {
       }
     });
 
+    // Realtime subscription to categories so navbar updates immediately
+    const channel = supabase
+      .channel('public:categories')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, (payload) => {
+        try {
+          const p: any = payload;
+          const ev = p.eventType || p.event || p.type || '';
+          const newRec = p.new || null;
+          const oldRec = p.old || null;
+          setCategories((prev) => {
+            const list = Array.isArray(prev) ? [...prev] : [];
+            if (ev === 'INSERT') {
+              if (newRec && newRec.name && !list.includes(newRec.name)) {
+                return [...list, newRec.name];
+              }
+              return list;
+            }
+            if (ev === 'UPDATE') {
+              if (oldRec?.name && newRec?.name) {
+                return list.map((c) => (c === oldRec.name ? newRec.name : c));
+              }
+              return list;
+            }
+            if (ev === 'DELETE') {
+              if (oldRec?.name) return list.filter((c) => c !== oldRec.name);
+              return list;
+            }
+            return list;
+          });
+        } catch (e) {
+          console.error('category realtime handler error', e);
+        }
+      })
+      .subscribe();
     return () => {
       subscription?.unsubscribe();
+      try {
+        channel.unsubscribe();
+      } catch {}
     };
   }, []);
 
@@ -113,9 +150,11 @@ export default function Navbar() {
 
           {/* icons */}
           <div className="flex items-center gap-2 sm:gap-6 flex-shrink-0">
-            <Link href="/notifications" className="text-gray-600 hover:text-gray-900 transition p-1">
-              <BellIcon className="h-7 w-7 sm:h-9 sm:w-9" />
-            </Link>
+            {user ? (
+              <Link href="/notifications" className="text-gray-600 hover:text-gray-900 transition p-1">
+                <BellIcon className="h-7 w-7 sm:h-9 sm:w-9" />
+              </Link>
+            ) : null}
             <Link href="/cart" className="text-gray-600 hover:text-gray-900 transition p-1">
               <ShoppingCartIcon className="h-7 w-7 sm:h-9 sm:w-9" />
             </Link>

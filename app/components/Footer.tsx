@@ -8,8 +8,8 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-semibold text-[#F2F2F2]">BOANIPA</h3>
             <p className="mt-2 text-sm text-[#D9D9D9]">
-              A small online market bringing the best local products to your
-              doorstep.
+              An online market bringing you the best products to your
+              doorstep. We offer a secure payment options and efficient delivery services
             </p>
           </div>
 
