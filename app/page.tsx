@@ -289,10 +289,10 @@ export default function Home() {
                       <>
                         <div className="flex items-center gap-2 mb-3">
                           <span className="text-sm text-gray-500 line-through">
-                            {discount.formatted.original}
+                            {discount.formatted.original || '£0.00'}
                           </span>
                           <span className="text-lg sm:text-xl font-bold text-green-600">
-                            {discount.formatted.discounted}
+                            {discount.formatted.discounted || '£0.00'}
                           </span>
                           <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
                             Save {discount.savingsPercent.toFixed(0)}%
@@ -302,12 +302,12 @@ export default function Home() {
                       </>
                     ) : (
                       <span className="text-lg sm:text-xl font-bold text-orange-600 mb-3 block">
-                        {p.price}
+                        {p.price || '£0.00'}
                       </span>
                     )}
                     <button 
                       onClick={() => handleAddToCart(p.id || '')}
-                      disabled={addingToCart === p.id}
+                      disabled={addingToCart === p.id || !p.price || (p.stock_quantity !== undefined && p.stock_quantity <= 0)}
                       className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white px-3 sm:px-4 py-2 rounded-lg text-sm sm:text-base font-semibold transition"
                     >
                       {addingToCart === p.id ? 'Adding...' : 'Add to Cart'}
@@ -356,11 +356,11 @@ export default function Home() {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-lg sm:text-xl font-bold text-orange-600">
-                      {p.price}
+                      {p.price || '£0.00'}
                     </span>
                     <button 
                       onClick={() => handleAddToCart(p.id || '')}
-                      disabled={addingToCart === p.id}
+                      disabled={addingToCart === p.id || !p.price || (p.stock_quantity !== undefined && p.stock_quantity <= 0)}
                       className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white px-3 sm:px-4 py-2 rounded-lg text-sm sm:text-base font-semibold transition"
                     >
                       {addingToCart === p.id ? 'Adding...' : 'Add to Cart'}
