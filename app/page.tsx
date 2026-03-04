@@ -185,7 +185,7 @@ export default function Home() {
                     'Image'
                   )}
                 </div>
-                <div className="p-4 sm:p-5 flex flex-col justify-between h-full">
+                <div className="p-4 sm:p-5 flex flex-col justify-between min-h-[280px]">
                   <div>
                     <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-1 line-clamp-2">
                       {p.name}
@@ -268,7 +268,7 @@ export default function Home() {
                   )}
                   <div className="absolute top-2 right-2 bg-orange-500 text-white px-2 py-1 rounded text-xs sm:text-sm font-bold">NEW</div>
                 </div>
-                <div className="p-4 sm:p-5 flex flex-col justify-between h-full">
+                <div className="p-4 sm:p-5 flex flex-col justify-between min-h-[280px]">
                   <div>
                     <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-1 line-clamp-2">
                       {p.name}
@@ -338,7 +338,7 @@ export default function Home() {
                     'Image'
                   )}
                 </div>
-                <div className="p-4 sm:p-5 flex flex-col justify-between h-full">
+                <div className="p-4 sm:p-5 flex flex-col justify-between min-h-[280px]">
                   <div>
                     <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-1 line-clamp-2">
                       {p.name}
@@ -378,3 +378,4 @@ export default function Home() {
     </div>
   );
 }
+
