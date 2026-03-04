@@ -201,7 +201,7 @@ export default function Home() {
                       <span className="text-gray-500 text-xs">{(p.rating || 0).toFixed(1)}</span>
                     </div>
                   </div>
-                  <div className="flex flex-col">
+                  <div className="flex flex-col mt-auto">
                     {/* price display with fallback */}
                     {discount ? (
                       <>
@@ -284,7 +284,7 @@ export default function Home() {
                       <span className="text-gray-500 text-xs">{(p.rating || 0).toFixed(1)}</span>
                     </div>
                   </div>
-                  <div>
+                  <div className="mt-auto">
                     {discount ? (
                       <>
                         <div className="flex items-center gap-2 mb-3">
@@ -354,10 +354,8 @@ export default function Home() {
                       <span className="text-gray-500 text-xs">{(p.rating || 0).toFixed(1)}</span>
                     </div>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg sm:text-xl font-bold text-orange-600">
-                      {p.price || '£0.00'}
-                    </span>
+                  <div className="mt-auto">
+                    {/* show add to cart unless out of stock or price missing */}
                     <button 
                       onClick={() => handleAddToCart(p.id || '')}
                       disabled={addingToCart === p.id || !p.price || (p.stock_quantity !== undefined && p.stock_quantity <= 0)}
