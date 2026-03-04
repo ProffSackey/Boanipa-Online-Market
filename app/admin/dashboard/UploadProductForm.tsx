@@ -14,7 +14,7 @@ export default function UploadProductForm({ refreshCategories, categories = [], 
   const [price, setPrice] = useState('');
   const [category, setCategory] = useState('');
   const [imageData, setImageData] = useState(''); // base64 or URL
-  const [stock, setStock] = useState('');
+  const [stock, setStock] = useState(''); // we'll send this as stock_quantity
   const [message, setMessage] = useState('');
 
   const handleSubmit = async (e: FormEvent) => {

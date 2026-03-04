@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
   // Log raw data for debugging
   console.log('GET /api/admin/products raw data:', JSON.stringify(data, null, 2));
   
-  // Ensure prices are formatted correctly
+  // Ensure prices are formatted correctly and quantity present
   const formattedData = (data || []).map((product: any) => {
     console.log(`Formatting price for product "${product.name}":`, { rawPrice: product.price, type: typeof product.price });
     
@@ -47,12 +47,15 @@ export async function GET(req: NextRequest) {
     if (product.price === null || product.price === undefined) {
       product.price = '£0.00';
       console.log(`Product "${product.name}": price was null, set to £0.00`);
+      // also ensure stock_quantity
+      if (product.stock_quantity == null) product.stock_quantity = 0;
       return product;
     }
     
     // If already formatted with £, return as-is
     if (typeof product.price === 'string' && product.price.includes('£')) {
       console.log(`Product "${product.name}": price already formatted - ${product.price}`);
+      if (product.stock_quantity == null) product.stock_quantity = 0;
       return product;
     }
     
@@ -76,7 +79,7 @@ export async function GET(req: NextRequest) {
       product.price = `£${priceNum.toFixed(2)}`;
       console.log(`Product "${product.name}": formatted to ${product.price}`);
     }
-    
+    if (product.stock_quantity == null) product.stock_quantity = 0;
     return product;
   });
   
@@ -97,7 +100,7 @@ export async function POST(req: NextRequest) {
     sb_admin_token: cookieStore.get('sb-admin-token')?.value,
     admin_session: cookieStore.get('admin_session')?.value,
   });
-  const { name, image, about, category, status, price } = body || {};
+  const { name, image, about, category, status, price, stock_quantity } = body || {};
   if (!name || price === undefined) {
     return NextResponse.json({ error: 'Missing fields (name, price required)' }, { status: 400 });
   }
@@ -132,6 +135,10 @@ export async function POST(req: NextRequest) {
     status: status || 'active',
     price: priceWithCurrency,
   };
+  if (typeof stock_quantity !== 'undefined') {
+    const qty = parseInt(stock_quantity, 10);
+    productData.stock_quantity = isNaN(qty) ? 0 : qty;
+  }
   if (imageUrl) productData.image_url = imageUrl;
   if (images) productData.images = images;
 
@@ -188,6 +195,12 @@ export async function PATCH(req: NextRequest) {
       ? parseFloat(updates.price).toFixed(2)
       : parseFloat(updates.price || '0').toFixed(2);
     sanitizedUpdates.price = `£${formattedPrice}`;
+  }
+  
+  // Quantity
+  if (updates.stock_quantity !== undefined) {
+    const q = parseInt(updates.stock_quantity, 10);
+    sanitizedUpdates.stock_quantity = isNaN(q) ? 0 : q;
   }
 
   // Handle images - only if URLs don't contain blob:

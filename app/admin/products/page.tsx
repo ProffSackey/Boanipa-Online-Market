@@ -224,6 +224,7 @@ export default function ProductsPage() {
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">About</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Category</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Price</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Qty</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Actions</th>
                 </tr>
               </thead>
@@ -262,6 +263,7 @@ export default function ProductsPage() {
                     <td className="px-6 py-4 text-sm text-gray-600">{product.about}</td>
                     <td className="px-6 py-4 text-sm text-gray-700">{product.category}</td>
                     <td className="px-6 py-4 text-sm font-semibold text-gray-900">{product.price}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-800">{product.stock_quantity ?? 0}</td>
                     <td className="px-6 py-4 text-sm flex items-center gap-3">
                       <button
                         onClick={() => router.push(`/admin/products/new?id=${product.id}`)}

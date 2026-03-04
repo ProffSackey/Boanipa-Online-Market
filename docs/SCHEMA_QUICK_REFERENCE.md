@@ -5,7 +5,7 @@
 | Table | Purpose | Key Fields | Row Count |
 |-------|---------|-----------|-----------|
 | **CATEGORIES** | Product types | id, name, description | ~10 |
-| **PRODUCTS** | Inventory | id, name, price, category, status | ~1000+ |
+| **PRODUCTS** | Inventory (with stock) | id, name, price, category, stock_quantity, status | ~1000+ |
 | **PROMOTIONS** | Discount campaigns | id, code, discount, product_ids, is_active | ~50 |
 | **ORDERS** | Customer purchases | id, order_number, customer_email, total_amount | ~10000+ |
 | **TRANSACTIONS** | Payment records | id, order_id, amount, payment_method, status | ~10000+ |

@@ -13,6 +13,7 @@ interface Product {
   category: string;
   status: "In Stock" | "Out of Stock" | "Low Stock";
   price: string;
+  quantity?: number; // inventory count
 }
 
 export default function NewProductPage() {
@@ -29,6 +30,7 @@ export default function NewProductPage() {
     category: "Electronics",
     status: "In Stock" as "In Stock" | "Out of Stock" | "Low Stock",
     price: "",
+    quantity: "0",
   });
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
@@ -99,6 +101,7 @@ export default function NewProductPage() {
                 category: prod.category || 'Electronics',
                 status: prod.status || 'In Stock',
                 price: typeof prod.price === 'string' ? prod.price.replace('£', '') : String(prod.price || ''),
+                quantity: prod.stock_quantity !== undefined && prod.stock_quantity !== null ? String(prod.stock_quantity) : '0',
               });
               setIsEditMode(true);
             }
@@ -122,6 +125,19 @@ export default function NewProductPage() {
       [name]: value,
     }));
   };
+
+  // auto-update status when quantity changes (threshold 5)
+  useEffect(() => {
+    const qty = parseInt(formData.quantity, 10);
+    if (!isNaN(qty)) {
+      let computed: "In Stock" | "Low Stock" | "Out of Stock" = "In Stock";
+      if (qty <= 0) computed = "Out of Stock";
+      else if (qty <= 5) computed = "Low Stock";
+      if (computed !== formData.status) {
+        setFormData((prev) => ({ ...prev, status: computed }));
+      }
+    }
+  }, [formData.quantity]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const newFiles = e.target.files ? Array.from(e.target.files) : [];
@@ -186,7 +202,9 @@ export default function NewProductPage() {
         !formData.name.trim() ||
         !formData.about.trim() ||
         !formData.price.trim() ||
-        formData.image.length === 0
+        formData.image.length === 0 ||
+        formData.quantity.trim() === "" ||
+        parseInt(formData.quantity, 10) < 0
       ) {
         setMessage("Please fill in all required fields (name, description, price, and at least one image).");
         setLoading(false);
@@ -202,6 +220,10 @@ export default function NewProductPage() {
         status: formData.status,
         price: formData.price,
       };
+      const qty = parseInt(formData.quantity, 10);
+      if (!isNaN(qty)) {
+        productData.stock_quantity = qty;
+      }
 
       // If editing, include the ID
       if (isEditMode && productId) {
@@ -249,6 +271,7 @@ export default function NewProductPage() {
         category: "Electronics",
         status: "In Stock",
         price: "",
+        quantity: "0",
       });
       setImageFiles([]);
 
@@ -724,6 +747,24 @@ export default function NewProductPage() {
                     <option value="Low Stock">Low Stock</option>
                     <option value="Out of Stock">Out of Stock</option>
                   </select>
+                </div>
+
+                {/* Quantity */}
+                <div>
+                  <label htmlFor="quantity" className="block text-sm font-semibold text-gray-900 mb-2">
+                    Quantity <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    id="quantity"
+                    name="quantity"
+                    value={formData.quantity}
+                    onChange={handleInputChange}
+                    placeholder="0"
+                    min="0"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                    required
+                  />
                 </div>
 
                 {/* Buttons */}
