@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import AdminNavbar from "../../../components/AdminNavbar";
 import { HomeIcon, UserGroupIcon, ShoppingCartIcon, CubeIcon, CreditCardIcon, ChartBarIcon, StarIcon, GiftIcon, BellIcon, EnvelopeIcon, CogIcon, CloudArrowUpIcon } from "@heroicons/react/24/outline";
 
@@ -16,10 +16,17 @@ interface Product {
   quantity?: number; // inventory count
 }
 
+export const dynamic = 'force-dynamic';
+
 export default function NewProductPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const productId = searchParams.get('id');
+  const [productId, setProductId] = useState<string | null>(null);
+
+  // read ID from query string after mount to avoid SSR issues
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setProductId(params.get('id'));
+  }, []);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sessionChecked, setSessionChecked] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);

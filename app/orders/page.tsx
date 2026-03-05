@@ -4,8 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { formatPrice } from "@/lib/promotionUtils";
-import Navbar from "../components/Navbar";
-import Footer from "../components/FooterWrapper";
 
 interface Order {
   id: string;
@@ -82,7 +80,6 @@ export default function OrdersPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
-      <Navbar />
 
       <div className="flex-1 max-w-4xl mx-auto w-full px-4 py-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">My Orders</h1>
@@ -165,7 +162,7 @@ export default function OrdersPage() {
         )}
       </div>
 
-      <Footer />
+      
     </div>
   );
 }

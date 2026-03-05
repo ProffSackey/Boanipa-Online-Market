@@ -3,10 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
-import { getCartItems, updateCartItemQuantity, removeFromCart, clearCart } from "@/lib/supabaseService";
-import Navbar from "../components/Navbar";
-import Footer from "../components/FooterWrapper";
+import { getCartItems, updateCartItemQuantity, removeFromCart, clearCart, addToCart } from "@/lib/supabaseService";
 import { MinusIcon, PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { getGuestCart, clearGuestCart } from "@/lib/cartUtils";
 
 interface CartItem {
   id: string;
@@ -16,6 +15,7 @@ interface CartItem {
     name?: string;
     price?: string;
     image_url?: string;
+    stock_quantity?: number;
   };
 }
 
@@ -56,13 +56,24 @@ export default function CartPage() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // Load cart from Supabase on mount
+  // Load cart from Supabase or localStorage on mount
   useEffect(() => {
     const checkAuth = async () => {
       const { data } = await supabase.auth.getSession();
       if (data.session) {
         setUser(data.session.user);
         const meta = data.session.user.user_metadata || {};
+
+        // Normalize country to ISO codes where possible
+        const rawCountry = (meta.address?.country || shippingInfo.country || "").toString();
+        const countryKey = rawCountry.trim().toUpperCase();
+        const countryMap: Record<string, string> = {
+          'GHANA': 'GH', 'GH': 'GH',
+          'UNITED KINGDOM': 'GB', 'UK': 'GB', 'GB': 'GB',
+          'UNITED STATES': 'US', 'USA': 'US', 'US': 'US'
+        };
+        const normalizedCountry = countryMap[countryKey] || rawCountry;
+
         setShippingInfo((prev) => ({
           ...prev,
           fullName: meta.full_name || "",
@@ -71,7 +82,7 @@ export default function CartPage() {
           address: meta.address?.street || "",
           city: meta.address?.city || "",
           postCode: meta.address?.postCode || "",
-          country: meta.address?.country || prev.country,
+          country: normalizedCountry,
           region: meta.address?.region || prev.region,
         }));
 
@@ -88,15 +99,60 @@ export default function CartPage() {
           );
         }
 
-        // Load cart from Supabase
-        const items = await getCartItems(data.session.user.email || "");
-        setCartItems(items);
+        // Load cart from Supabase (safe: catch and log details)
+        let items: CartItem[] = [];
+        try {
+          const userEmail = data.session.user.email || "";
+          console.log('Fetching cart for user:', userEmail);
+          items = await getCartItems(userEmail);
+        } catch (err) {
+          console.error('Failed to get cart items (detailed):', err);
+          items = [];
+        }
+
+        // Also check for guest cart and merge if exists
+        const guestCart = getGuestCart();
+        if (guestCart.length > 0) {
+          // Add guest cart items to user cart
+          for (const guestItem of guestCart) {
+            await addToCart(data.session.user.email || "", guestItem.productId, guestItem.quantity);
+          }
+          // Clear guest cart after merging
+          clearGuestCart();
+          // Reload items
+          try {
+            const updatedItems = await getCartItems(data.session.user.email || "");
+            setCartItems(updatedItems);
+          } catch (err) {
+            console.error('Failed to reload cart items after merge:', err);
+            setCartItems([]);
+          }
+        } else {
+          setCartItems(items);
+        }
       }
       setLoading(false);
     };
 
     checkAuth();
   }, []);
+
+  // Subscribe to app-level cart change events so this page updates in real-time
+  useEffect(() => {
+    const handler = async (ev: any) => {
+      try {
+        const email = ev?.detail?.email || (user && user.email) || null;
+        if (!email) return;
+        const items = await getCartItems(email);
+        setCartItems(items);
+      } catch (e) {
+        console.error('Failed to refresh cart items on userCartChange event:', e);
+      }
+    };
+
+    window.addEventListener('userCartChange', handler as EventListener);
+    return () => window.removeEventListener('userCartChange', handler as EventListener);
+  }, [user]);
 
   // Calculate shipping fee when country/region changes
   useEffect(() => {
@@ -274,8 +330,33 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
-      <Navbar />
+    <div className="min-h-screen text-gray-900 flex flex-col bg-white">
+
+      {/* Login Prompt for Guest Users */}
+      {!loading && !user && (
+        <div className="bg-blue-50 border-b border-blue-200">
+          <div className="max-w-7xl mx-auto w-full px-4 py-6 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-blue-900 mb-1">Ready to checkout?</h2>
+              <p className="text-blue-700">Log in or create an account to complete your purchase</p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => router.push('/login')}
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+              >
+                Log In
+              </button>
+              <button
+                onClick={() => router.push('/auth/check-user')}
+                className="px-6 py-2 bg-white text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition font-medium"
+              >
+                Create Account
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Shopping Cart</h1>
@@ -303,26 +384,36 @@ export default function CartPage() {
               <div className="space-y-4">
                 {cartItems.map((item) => {
                   const price = parseFloat(item.product?.price?.replace("£", "") || "0");
+                  const inStock = item.product?.stock_quantity != null ? Number(item.product.stock_quantity) : null;
                   return (
                     <div
                       key={item.id}
                       className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg"
                     >
-                      {item.product?.image_url && (
-                        <img
-                          src={item.product.image_url}
-                          alt={item.product?.name}
-                          className="w-20 h-20 object-cover rounded"
-                        />
-                      )}
+                      <div className="w-20 h-20 bg-gray-100 rounded overflow-hidden flex items-center justify-center">
+                        {item.product?.image_url ? (
+                          <img src={item.product.image_url} alt={item.product?.name || 'Product'} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-xs text-gray-500">No image</span>
+                        )}
+                      </div>
                       <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900">{item.product?.name || "Unknown Product"}</h3>
+                        <h3 className="font-semibold text-gray-900">
+                          {item.product?.name || `Product ID: ${item.product_id}`}
+                        </h3>
                         <p className="text-gray-600">£{price.toFixed(2)}</p>
+                        {inStock != null && (
+                          <p className="text-sm text-gray-500">In stock: {inStock}</p>
+                        )}
+                        {!item.product?.name && (
+                          <p className="text-red-500 text-sm">⚠️ Product data not found</p>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 border border-gray-300 rounded">
                         <button
                           onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
                           className="p-1 hover:bg-gray-100"
+                          aria-label="Decrease quantity"
                         >
                           <MinusIcon className="h-4 w-4" />
                         </button>
@@ -330,6 +421,8 @@ export default function CartPage() {
                         <button
                           onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
                           className="p-1 hover:bg-gray-100"
+                          aria-label="Increase quantity"
+                          disabled={inStock != null && item.quantity >= inStock}
                         >
                           <PlusIcon className="h-4 w-4" />
                         </button>
@@ -504,17 +597,17 @@ export default function CartPage() {
               {/* Checkout Button */}
               <button
                 onClick={handleCheckout}
-                disabled={submitting || calculating || cartItems.length === 0}
+                disabled={submitting || calculating || cartItems.length === 0 || !user}
                 className="w-full px-6 py-3 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
-                {submitting ? "Processing..." : "Place Order"}
+                {!user ? "Log in to Checkout" : submitting ? "Processing..." : "Place Order"}
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <Footer />
+      
     </div>
   );
 }

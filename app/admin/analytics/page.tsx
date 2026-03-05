@@ -13,7 +13,7 @@ export default function AnalyticsPage() {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sessionChecked, setSessionChecked] = useState(false);
-  const [timePeriod, setTimePeriod] = useState("Last 12 months");
+  const [timePeriod, setTimePeriod] = useState("Today");
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
   const [kpis, setKpis] = useState({ revenue: '', orders: 0, customers: 0, lowStock: 0 });
 
@@ -97,7 +97,7 @@ export default function AnalyticsPage() {
     return null;
   }
 
-  const periods = ["Last 7 days", "Last 30 days", "Last 12 months", "Last year"];
+  const periods = ["Today", "Last 7 days", "Last 30 days", "Last 12 months", "Last year"];
 
   return (
     <div className="min-h-screen text-gray-800 bg-gray-50">
@@ -225,8 +225,8 @@ export default function AnalyticsPage() {
           <div className="px-8 py-8">
             {/* Row 1: Revenue & Sales */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-              <RevenueChart />
-              <SalesByCategory />
+              <RevenueChart timePeriod={timePeriod} />
+              <SalesByCategory timePeriod={timePeriod} />
             </div>
 
             {/* Row 2: Top Products & Top Customers */}

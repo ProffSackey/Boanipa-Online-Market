@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { supabase, supabaseAdmin } from '../../../lib/supabaseClient';
+import { supabaseServer, supabaseAdmin } from '../../../lib/supabaseClient';
 
 async function fetchCategories() {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseServer
     .from('categories')
     .select('name');
   if (error) throw error;
@@ -10,7 +10,7 @@ async function fetchCategories() {
 }
 
 async function insertCategory(name: string) {
-  const db = supabaseAdmin || supabase;
+  const db = supabaseAdmin || supabaseServer;
   const { data, error } = await db.from('categories').insert({ name }).select();
   if (error) {
     console.error('insertCategory error:', error);
@@ -20,7 +20,7 @@ async function insertCategory(name: string) {
 }
 
 async function updateCategory(oldName: string, newName: string) {
-  const db = supabaseAdmin || supabase;
+  const db = supabaseAdmin || supabaseServer;
   const { data, error } = await db
     .from('categories')
     .update({ name: newName })
@@ -34,7 +34,7 @@ async function updateCategory(oldName: string, newName: string) {
 }
 
 async function deleteCategory(name: string) {
-  const db = supabaseAdmin || supabase;
+  const db = supabaseAdmin || supabaseServer;
   const { data, error } = await db.from('categories').delete().eq('name', name).select();
   if (error) {
     console.error('deleteCategory error:', error);

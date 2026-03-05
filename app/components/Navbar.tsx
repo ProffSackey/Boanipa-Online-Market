@@ -6,10 +6,14 @@ import { ShoppingCartIcon, UserCircleIcon, MagnifyingGlassIcon, BellIcon, Bars3I
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { supabase } from '../../lib/supabaseClient';
+import { getGuestCartCount, subscribeToGuestCartChanges, subscribeToUserCartChanges } from '../../lib/cartUtils';
+import { getUserCartCount } from '../../lib/supabaseService';
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const [guestCartCount, setGuestCartCount] = useState(0);
+  const [userCartCount, setUserCartCount] = useState(0);
 
   // don't render on admin pages
   if (pathname?.startsWith('/admin')) {
@@ -19,6 +23,87 @@ export default function Navbar() {
   const [categories, setCategories] = useState<string[]>([]);
   const [user, setUser] = useState<any>(null);
   const [firstName, setFirstName] = useState<string>('');
+
+  // Show user cart count if logged in, otherwise show guest cart count
+  const cartCount = user ? userCartCount : guestCartCount;
+
+  useEffect(() => {
+    // Initialize guest cart count
+    const initialCount = getGuestCartCount();
+    console.log('[Navbar] Initial guest cart count:', initialCount);
+    setGuestCartCount(initialCount);
+
+    // Subscribe to guest cart changes (real-time updates)
+    const unsubscribe = subscribeToGuestCartChanges((count) => {
+      console.log('[Navbar] Guest cart count updated to:', count);
+      setGuestCartCount(count);
+    });
+
+    // Cleanup subscription on unmount
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    // Fetch user's cart count if logged in
+    const fetchUserCartCount = async (email: string) => {
+      try {
+        const count = await getUserCartCount(email);
+        console.log('[Navbar] User cart count:', count);
+        setUserCartCount(count);
+      } catch (error) {
+        console.error('[Navbar] Error fetching user cart count:', error);
+      }
+    };
+
+    if (user?.email) {
+      fetchUserCartCount(user.email);
+
+      // Subscribe to cart_items changes for this user in real-time
+      const channel = supabase
+        .channel(`cart-items-${user.email}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'cart_items',
+            filter: `customer_email=eq.${user.email}`,
+          },
+          () => {
+            // Refetch cart count on any change
+            fetchUserCartCount(user.email);
+          }
+        )
+        .subscribe();
+
+      // Also subscribe to custom user cart change events
+      const unsubscribeCustom = subscribeToUserCartChanges(user.email, () => {
+        fetchUserCartCount(user.email);
+      });
+
+      return () => {
+        channel.unsubscribe();
+        unsubscribeCustom();
+      };
+    }
+  }, [user]);
+
+  // Listen for an immediate count update dispatched after server add operations
+  useEffect(() => {
+    const handler = (ev: any) => {
+      try {
+        const detail = ev?.detail;
+        if (detail?.count != null) {
+          console.log('[Navbar] userCartCountUpdated event received:', detail.count);
+          setUserCartCount(Number(detail.count));
+        }
+      } catch (e) {
+        console.error('userCartCountUpdated handler error', e);
+      }
+    };
+    window.addEventListener('userCartCountUpdated', handler as EventListener);
+    return () => window.removeEventListener('userCartCountUpdated', handler as EventListener);
+  }, []);
 
   useEffect(() => {
     fetch('/api/categories')
@@ -62,6 +147,7 @@ export default function Navbar() {
       } else {
         setUser(null);
         setFirstName('');
+        setUserCartCount(0);
       }
     });
 
@@ -155,8 +241,13 @@ export default function Navbar() {
                 <BellIcon className="h-7 w-7 sm:h-9 sm:w-9" />
               </Link>
             ) : null}
-            <Link href="/cart" className="text-gray-600 hover:text-gray-900 transition p-1">
+            <Link href="/cart" className="text-gray-600 hover:text-gray-900 transition p-1 relative">
               <ShoppingCartIcon className="h-7 w-7 sm:h-9 sm:w-9" />
+              {cartCount > 0 && (
+                <span className="absolute top-0 right-0 bg-orange-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center -translate-y-1 translate-x-1">
+                  {cartCount}
+                </span>
+              )}
             </Link>
             <Link href={user ? "/user" : "/login"} className="flex items-center gap-1 sm:gap-2 text-gray-600 hover:text-gray-900 transition p-1">
               <UserCircleIcon className="h-7 w-7 sm:h-9 sm:w-9" />

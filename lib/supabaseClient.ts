@@ -17,6 +17,9 @@ export const supabase = createClient(url, anonKey, {
   },
 });
 
+// server-side client without auth for API routes
+export const supabaseServer = createClient(url, anonKey);
+
 // server-side client using service role key for privileged operations
 export const getSupabaseAdmin = () => {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

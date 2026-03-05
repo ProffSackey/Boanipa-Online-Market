@@ -64,6 +64,18 @@ export default function HeroCarousel() {
                 />
               </div>
             )}
+              {s.id === 2 && (
+              <div className="absolute inset-0">
+                <Image
+                  src="/discover.jpeg"
+                  alt="Discover Great Deals"
+                  fill
+                  style={{ objectFit: "cover" }}
+                  className="object-cover"
+                  priority
+                />
+              </div>
+            )}
             {s.id === 3 && (
               <div className="absolute inset-0">
                 <Image

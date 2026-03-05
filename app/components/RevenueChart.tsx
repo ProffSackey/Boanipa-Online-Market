@@ -26,10 +26,73 @@ ChartJS.register(
 
 import { useEffect, useState } from 'react';
 
-export default function RevenueChart() {
-  const labels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  const [monthlyData, setMonthlyData] = useState<number[]>(new Array(12).fill(0));
+export default function RevenueChart({ timePeriod = "Today" }: { timePeriod?: string }) {
+  const [labels, setLabels] = useState<string[]>([]);
+  const [monthlyData, setMonthlyData] = useState<number[]>([]);
   const currentYear = new Date().getFullYear();
+
+  // Generate labels and filter orders based on timePeriod
+  const getDateRangeAndLabels = () => {
+    const today = new Date();
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    
+    switch (timePeriod) {
+      case "Today":
+        return {
+          startDate: startOfToday,
+          endDate: new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000),
+          labels: Array.from({ length: 24 }, (_, i) => `${i}:00`),
+          dateKey: (d: Date) => d.getHours(),
+        };
+      case "Last 7 days":
+        const sevenDaysAgo = new Date(today);
+        sevenDaysAgo.setDate(today.getDate() - 6);
+        return {
+          startDate: sevenDaysAgo,
+          endDate: new Date(today.getTime() + 24 * 60 * 60 * 1000),
+          labels: Array.from({ length: 7 }, (_, i) => {
+            const d = new Date(sevenDaysAgo);
+            d.setDate(d.getDate() + i);
+            return d.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' });
+          }),
+          dateKey: (d: Date) => {
+            const diff = Math.floor((d.getTime() - sevenDaysAgo.getTime()) / (1000 * 60 * 60 * 24));
+            return Math.max(0, Math.min(6, diff));
+          },
+        };
+      case "Last 30 days":
+        const thirtyDaysAgo = new Date(today);
+        thirtyDaysAgo.setDate(today.getDate() - 29);
+        return {
+          startDate: thirtyDaysAgo,
+          endDate: new Date(today.getTime() + 24 * 60 * 60 * 1000),
+          labels: Array.from({ length: 30 }, (_, i) => {
+            const d = new Date(thirtyDaysAgo);
+            d.setDate(d.getDate() + i);
+            return d.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' });
+          }),
+          dateKey: (d: Date) => {
+            const diff = Math.floor((d.getTime() - thirtyDaysAgo.getTime()) / (1000 * 60 * 60 * 24));
+            return Math.max(0, Math.min(29, diff));
+          },
+        };
+      case "Last 12 months":
+      default:
+        return {
+          startDate: new Date(currentYear, 0, 1),
+          endDate: new Date(currentYear + 1, 0, 1),
+          labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+          dateKey: (d: Date) => d.getMonth(),
+        };
+      case "Last year":
+        return {
+          startDate: new Date(currentYear - 1, 0, 1),
+          endDate: new Date(currentYear, 0, 1),
+          labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+          dateKey: (d: Date) => d.getMonth(),
+        };
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -39,23 +102,30 @@ export default function RevenueChart() {
         const orders = await res.json();
         if (!Array.isArray(orders)) return;
 
-        const months = new Array(12).fill(0);
+        const { startDate, endDate, labels: newLabels, dateKey } = getDateRangeAndLabels();
+        setLabels(newLabels);
+
+        const dataSize = timePeriod === "Today" ? 24 : (timePeriod === "Last 7 days" ? 7 : (timePeriod === "Last 30 days" ? 30 : 12));
+        const data = new Array(dataSize).fill(0);
+
         for (const order of orders) {
           const dateStr = order.created_at || order.date || order.ordered_at || order.order_date;
           const d = dateStr ? new Date(dateStr) : null;
-          if (!d || d.getFullYear() !== currentYear) continue;
+          if (!d || d < startDate || d >= endDate) continue;
 
-          const m = d.getMonth();
-          const amountRaw = order.total_amount ?? order.amount ?? order.total ?? order.grand_total ?? 0;
-          const amount = parseFloat(String(amountRaw).replace(/[^0-9.-]+/g, '')) || 0;
-          if (!isNaN(m)) months[m] += amount;
+          const idx = dateKey(d);
+          if (idx >= 0 && idx < dataSize) {
+            const amountRaw = order.total_amount ?? order.amount ?? order.total ?? order.grand_total ?? 0;
+            const amount = parseFloat(String(amountRaw).replace(/[^0-9.-]+/g, '')) || 0;
+            data[idx] += amount;
+          }
         }
-        setMonthlyData(months.map((v) => Math.round(v)));
+        setMonthlyData(data.map((v) => Math.round(v)));
       } catch (err) {
         console.warn('RevenueChart: unable to load orders', err);
       }
     })();
-  }, []);
+  }, [timePeriod]);
 
   const data = {
     labels,

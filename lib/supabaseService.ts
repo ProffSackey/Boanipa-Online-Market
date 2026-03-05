@@ -30,6 +30,7 @@ export interface Product {
   image_url?: string;
   images?: string[];
   status: string;
+  stock_quantity?: number;
   rating?: number;
   about?: string;
   created_at?: string;
@@ -595,9 +596,15 @@ export const calculateShippingFee = async (country: string, region?: string): Pr
     // If region provided, try exact match first, then country-wide
     if (region) {
       const { data, error } = await query;
+      console.log('calculateShippingFee: query returned', { country, region, rows: (data || []).length, error: error || null });
       if (!error && data && data.length > 0) {
-        // Find matching region
-        const zoneData = data.find((z: any) => z.region && z.region.includes(region.toUpperCase()));
+        // Find matching region (robust, case-insensitive, bidirectional)
+        const qRegion = String(region).toUpperCase();
+        const zoneData = data.find((z: any) => {
+          if (!z.region) return false;
+          const zRegion = String(z.region).toUpperCase();
+          return zRegion.includes(qRegion) || qRegion.includes(zRegion);
+        });
         if (zoneData) {
           return {
             fee: parseFloat(zoneData.base_fee),
@@ -843,10 +850,53 @@ export const getCartItems = async (email: string): Promise<CartItem[]> => {
       return [];
     }
 
-    return data || [];
+    // Filter out items where product is null (orphaned cart items)
+    const validItems = (data || []).filter(item => item.product != null);
+
+    // If there were orphaned items, clean them up
+    if (validItems.length !== (data || []).length) {
+      const orphanedIds = (data || [])
+        .filter(item => item.product == null)
+        .map(item => item.id);
+
+      if (orphanedIds.length > 0) {
+        console.warn('Cleaning up orphaned cart items:', orphanedIds);
+        await supabase
+          .from('cart_items')
+          .delete()
+          .in('id', orphanedIds);
+      }
+    }
+
+    return validItems;
   } catch (error) {
     console.error('Error fetching cart items:', error);
     return [];
+  }
+};
+
+/**
+ * Get total cart quantity for a customer (sums quantities, includes orphaned rows)
+ */
+export const getUserCartCount = async (email: string): Promise<number> => {
+  try {
+    // Fetch cart rows with a product join and only count rows where product exists
+    const { data, error } = await supabase
+      .from('cart_items')
+      .select(`quantity, product:product_id (id)`)
+      .eq('customer_email', email);
+
+    if (error) {
+      console.error('Error fetching cart count:', error);
+      return 0;
+    }
+
+    const rows = data || [];
+    const validRows = (rows as any[]).filter((r) => r.product != null);
+    return validRows.reduce((sum: number, r: any) => sum + (Number(r.quantity) || 0), 0);
+  } catch (error) {
+    console.error('Error fetching cart count:', error);
+    return 0;
   }
 };
 
@@ -859,24 +909,146 @@ export const addToCart = async (
   quantity: number = 1
 ): Promise<CartItem | null> => {
   try {
-    const { data, error } = await supabase
-      .from('cart_items')
-      .upsert(
-        {
-          customer_email: email,
-          product_id: productId,
-          quantity,
-        },
-        { onConflict: 'customer_email,product_id' }
-      )
-      .select();
+    // Ensure we don't add more than available stock
+    const { data: prodData, error: prodErr } = await supabase
+      .from('products')
+      .select('id, stock_quantity')
+      .eq('id', productId)
+      .limit(1)
+      .single();
 
-    if (error) {
-      console.error('Error adding to cart:', error);
-      return null;
+    if (prodErr) {
+      // Product read may be blocked for client due to RLS; don't fail the add — assume ample availability
+      console.debug('Failed to fetch product for stock check (non-fatal, assuming available):', productId, prodErr);
+    }
+    const available = prodData?.stock_quantity != null ? Number(prodData.stock_quantity) : Number.MAX_SAFE_INTEGER;
+    // Check if cart item already exists for this user/product
+    const { data: existingData, error: fetchError } = await supabase
+      .from('cart_items')
+      .select('id,quantity')
+      .eq('customer_email', email)
+      .eq('product_id', productId)
+      .limit(1)
+      .single();
+
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      // PGRST116 may mean no rows found depending on client; log other errors
+      console.error('Error checking existing cart item:', fetchError);
     }
 
-    return data?.[0] || null;
+    let result: any = null;
+
+    if (existingData && existingData.id) {
+      // Update existing row by incrementing quantity, but cap at available stock
+      const currentQty = Number(existingData.quantity) || 0;
+      let newQuantity = currentQty + quantity;
+      if (available <= 0) {
+        console.warn('Product out of stock, cannot add to cart:', productId);
+        return null;
+      }
+      if (newQuantity > available) newQuantity = available;
+      const { data: updated, error: updateError } = await supabase
+        .from('cart_items')
+        .update({ quantity: newQuantity })
+        .eq('id', existingData.id)
+        .select();
+
+      if (updateError) {
+        console.error('Error updating cart item quantity:', updateError);
+        return null;
+      }
+
+      result = updated?.[0] || null;
+    } else {
+      // Insert new cart item. If a unique-constraint error occurs (race), fall back to incrementing.
+      const { data: inserted, error: insertError } = await supabase
+        .from('cart_items')
+        .insert([
+          {
+            customer_email: email,
+            product_id: productId,
+            quantity,
+          },
+        ])
+        .select();
+
+      if (insertError) {
+        // Handle duplicate key (concurrent insert) by updating the existing row's quantity
+        const errMsg = JSON.stringify(insertError || {});
+        const isDuplicate = (insertError && ((insertError.code === '23505') || (insertError.message && String(insertError.message).includes('duplicate key'))));
+        if (isDuplicate) {
+          console.debug('Duplicate insert detected for cart item, handling by incrementing existing row:', { email, productId, insertError: errMsg });
+        } else {
+          console.error('Error inserting cart item:', insertError, errMsg);
+        }
+
+        if (isDuplicate) {
+          try {
+            const { data: existingRow, error: fetchErr } = await supabase
+              .from('cart_items')
+              .select('id, quantity')
+              .eq('customer_email', email)
+              .eq('product_id', productId)
+              .limit(1)
+              .single();
+
+            if (fetchErr) {
+              console.error('Failed to fetch existing cart row after duplicate insert:', fetchErr);
+              return null;
+            }
+
+            // Cap new quantity at available stock
+            const currentRowQty = Number(existingRow.quantity) || 0;
+            let targetQty = currentRowQty + quantity;
+            if (available <= 0) {
+              console.warn('Product out of stock during duplicate-insert handling:', productId);
+              return null;
+            }
+            if (targetQty > available) targetQty = available;
+
+            const { data: updated, error: updateError } = await supabase
+              .from('cart_items')
+              .update({ quantity: targetQty })
+              .eq('id', existingRow.id)
+              .select();
+
+            if (updateError) {
+              console.error('Error updating cart item after duplicate insert:', updateError);
+              return null;
+            }
+
+            result = updated?.[0] || null;
+          } catch (e) {
+            console.error('Exception handling duplicate insert for cart item:', e);
+            return null;
+          }
+        } else {
+          return null;
+        }
+      } else {
+        result = inserted?.[0] || null;
+      }
+    }
+
+    // Dispatch custom event for UI updates (similar to guest cart)
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('userCartChange', {
+        detail: { email: email },
+      }));
+    }
+
+    // Also proactively dispatch updated count so UI can update immediately
+    try {
+      if (typeof window !== 'undefined') {
+        const count = await getUserCartCount(email);
+        window.dispatchEvent(new CustomEvent('userCartCountUpdated', { detail: { count } }));
+      }
+    } catch (e) {
+      // non-fatal
+      console.error('Failed to dispatch userCartCountUpdated:', e);
+    }
+
+    return result;
   } catch (error) {
     console.error('Error adding to cart:', error);
     return null;
@@ -898,6 +1070,32 @@ export const updateCartItemQuantity = async (
       return null;
     }
 
+    // Ensure requested quantity does not exceed available stock
+    try {
+      const { data: prodData, error: prodErr } = await supabase
+        .from('products')
+        .select('id, stock_quantity')
+        .eq('id', productId)
+        .limit(1)
+        .single();
+      if (prodErr) {
+        console.error('Failed to fetch product for stock check (update):', prodErr);
+      }
+      const available = prodData?.stock_quantity != null ? Number(prodData.stock_quantity) : 0;
+      if (available <= 0) {
+        // nothing available
+        console.warn('Product out of stock on update:', productId);
+        await removeFromCart(email, productId);
+        return null;
+      }
+      if (quantity > available) {
+        console.warn('Requested quantity exceeds stock, capping to available:', { productId, requested: quantity, available });
+        quantity = available;
+      }
+    } catch (e) {
+      console.error('Error checking stock before update:', e);
+    }
+
     const { data, error } = await supabase
       .from('cart_items')
       .update({ quantity })
@@ -908,6 +1106,23 @@ export const updateCartItemQuantity = async (
     if (error) {
       console.error('Error updating cart item:', error);
       return null;
+    }
+
+    // Dispatch custom event for UI updates
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('userCartChange', {
+        detail: { email: email },
+      }));
+    }
+
+    // Dispatch updated count
+    try {
+      if (typeof window !== 'undefined') {
+        const count = await getUserCartCount(email);
+        window.dispatchEvent(new CustomEvent('userCartCountUpdated', { detail: { count } }));
+      }
+    } catch (e) {
+      console.error('Failed to dispatch userCartCountUpdated (updateQuantity):', e);
     }
 
     return data?.[0] || null;
@@ -936,6 +1151,23 @@ export const removeFromCart = async (
       return false;
     }
 
+    // Dispatch custom event for UI updates
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('userCartChange', {
+        detail: { email: email },
+      }));
+    }
+
+    // Dispatch updated count
+    try {
+      if (typeof window !== 'undefined') {
+        const count = await getUserCartCount(email);
+        window.dispatchEvent(new CustomEvent('userCartCountUpdated', { detail: { count } }));
+      }
+    } catch (e) {
+      console.error('Failed to dispatch userCartCountUpdated (remove):', e);
+    }
+
     return true;
   } catch (error) {
     console.error('Error removing from cart:', error);
@@ -956,6 +1188,15 @@ export const clearCart = async (email: string): Promise<boolean> => {
     if (error) {
       console.error('Error clearing cart:', error);
       return false;
+    }
+
+    // Dispatch updated count (cleared -> zero)
+    try {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('userCartCountUpdated', { detail: { count: 0 } }));
+      }
+    } catch (e) {
+      console.error('Failed to dispatch userCartCountUpdated (clear):', e);
     }
 
     return true;

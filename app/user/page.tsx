@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
-import { ArrowLeftIcon, EnvelopeIcon, PhoneIcon, MapPinIcon, CogIcon, Bars3Icon, UserCircleIcon, ShoppingBagIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, EnvelopeIcon, PhoneIcon, MapPinIcon, CogIcon, Bars3Icon, UserCircleIcon, ShoppingBagIcon, StarIcon, ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
 
 interface Order {
   id: string;
@@ -40,6 +40,12 @@ export default function UserPage() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  // which sub-section of the settings panel is currently visible
+  const [settingsSection, setSettingsSection] = useState<
+    "menu" | "editProfile" | "payment" | "security" | "shipping"
+  >("menu");
+
+  // form state used for editing profile information
   const [profileForm, setProfileForm] = useState<ProfileForm>({
     fullName: "",
     phone: "",
@@ -50,6 +56,7 @@ export default function UserPage() {
     region: "",
   });
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     supabase.auth
@@ -134,6 +141,8 @@ export default function UserPage() {
       </div>
     );
   }
+  // At this point we know userProfile is defined; make a non-nullable reference for cleaner JSX
+  const profile = userProfile;
 
   const saveProfile = async () => {
     try {
@@ -162,6 +171,19 @@ export default function UserPage() {
           setUser(session.data.session.user);
         }
         alert('Profile saved');
+        // reflect updated information in UI
+        setUserProfile((prev) =>
+          prev
+            ? {
+                ...prev,
+                fullName: profileForm.fullName,
+                phone: profileForm.phone,
+                country: profileForm.country,
+                address: profileForm.address,
+              }
+            : prev
+        );
+        setSettingsSection('menu');
       }
     } catch (e) {
       console.error(e);
@@ -183,122 +205,23 @@ export default function UserPage() {
     <div className="min-h-screen bg-gray-100 flex">
       {/* Desktop Sidebar */}
       <aside className="w-64 text-gray-800 bg-white border-r border-gray-200 p-4 hidden md:flex md:flex-col">
-        <h2 className="text-lg font-semibold mb-6 text-gray-900">My Account</h2>
+        {/* user avatar & name */}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold">
+            {getInitials(profile.fullName)}
+          </div>
+          <div className="text-gray-900 font-medium truncate">{userProfile.fullName}</div>
+        </div>
+
         <nav className="space-y-3 text-gray-700 text-base flex-1">
           <button
             onClick={() => {
               router.push('/user');
               setMobileMenuOpen(false);
             }}
-            className="w-full text-left block px-3 py-2 rounded hover:bg-gray-100 font-medium transition flex items-center gap-3"
+            className={`w-full text-left block px-3 py-2 rounded hover:bg-gray-100 font-medium transition flex items-center gap-3 ${pathname === '/user' ? 'bg-gray-100' : ''}`}
           >
             <UserCircleIcon className="h-5 w-5" />
-        {/* Shipping/Profile editing form */}
-        <div className="bg-white shadow rounded-lg p-8 mb-6" id="settings">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Account Settings</h2>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input
-                type="text"
-                placeholder="Full Name"
-                value={profileForm.fullName}
-                onChange={(e) =>
-                  setProfileForm({ ...profileForm, fullName: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
-              <input
-                type="tel"
-                placeholder="Phone"
-                value={profileForm.phone}
-                onChange={(e) =>
-                  setProfileForm({ ...profileForm, phone: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <select
-                value={profileForm.country}
-                onChange={(e) =>
-                  setProfileForm({
-                    ...profileForm,
-                    country: e.target.value,
-                    region: '',
-                  })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
-                <option value="GB">United Kingdom</option>
-                <option value="US">United States</option>
-                <option value="GH">Ghana</option>
-              </select>
-              {(profileForm.country === 'GB' || profileForm.country === 'GH') && (
-                <input
-                  type="text"
-                  placeholder="Region/State"
-                  value={profileForm.region}
-                  onChange={(e) =>
-                    setProfileForm({
-                      ...profileForm,
-                      region: e.target.value.toUpperCase(),
-                    })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                />
-              )}
-              {profileForm.country === 'US' && (
-                <select
-                  value={profileForm.region}
-                  onChange={(e) =>
-                    setProfileForm({ ...profileForm, region: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                >
-                  <option value="">Select State</option>
-                  <option value="CA">California</option>
-                  <option value="CO">Colorado</option>
-                  <option value="GA">Georgia</option>
-                </select>
-              )}
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input
-                type="text"
-                placeholder="Street Address"
-                value={profileForm.address}
-                onChange={(e) =>
-                  setProfileForm({ ...profileForm, address: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
-              <input
-                type="text"
-                placeholder="City"
-                value={profileForm.city}
-                onChange={(e) =>
-                  setProfileForm({ ...profileForm, city: e.target.value })
-                }
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-              />
-            </div>
-            <input
-              type="text"
-              placeholder="Post Code"
-              value={profileForm.postCode}
-              onChange={(e) =>
-                setProfileForm({ ...profileForm, postCode: e.target.value })
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-            />
-            <button
-              onClick={saveProfile}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-            >
-              Save Settings
-            </button>
-          </div>
-        </div>
             My Profile
           </button>
           <button
@@ -306,10 +229,30 @@ export default function UserPage() {
               router.push('/orders');
               setMobileMenuOpen(false);
             }}
-            className="w-full text-left block px-3 py-2 rounded hover:bg-gray-100 font-medium transition flex items-center gap-3"
+            className={`w-full text-left block px-3 py-2 rounded hover:bg-gray-100 font-medium transition flex items-center gap-3 ${pathname === '/orders' ? 'bg-gray-100' : ''}`}
           >
             <ShoppingBagIcon className="h-5 w-5" />
             My Orders
+          </button>
+          <button
+            onClick={() => {
+              router.push('/messages');
+              setMobileMenuOpen(false);
+            }}
+            className={`w-full text-left block px-3 py-2 rounded hover:bg-gray-100 font-medium transition flex items-center gap-3 ${pathname === '/messages' ? 'bg-gray-100' : ''}`}
+          >
+            <EnvelopeIcon className="h-5 w-5" />
+            Messages
+          </button>
+          <button
+            onClick={() => {
+              router.push('/reviews');
+              setMobileMenuOpen(false);
+            }}
+            className={`w-full text-left block px-3 py-2 rounded hover:bg-gray-100 font-medium transition flex items-center gap-3 ${pathname === '/reviews' ? 'bg-gray-100' : ''}`}
+          >
+            <StarIcon className="h-5 w-5" />
+            Ratings & Reviews
           </button>
           <button
             onClick={() => {
@@ -336,14 +279,20 @@ export default function UserPage() {
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-40 md:hidden flex">
           <div className="w-64 bg-white border-r border-gray-200 p-4 flex flex-col shadow-lg">
-            <h2 className="text-lg font-semibold mb-6 text-gray-900">My Account</h2>
+            {/* user info */}
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold">
+                {getInitials(userProfile.fullName)}
+              </div>
+              <div className="text-gray-900 font-medium truncate">{userProfile.fullName}</div>
+            </div>
             <nav className="space-y-3 text-gray-700 text-base flex-1">
               <button
                 onClick={() => {
                   router.push('/user');
                   setMobileMenuOpen(false);
                 }}
-                className="w-full text-left block px-3 py-2 rounded hover:bg-gray-100 font-medium transition flex items-center gap-3"
+                className={`w-full text-left block px-3 py-2 rounded hover:bg-gray-100 font-medium transition flex items-center gap-3 ${pathname === '/user' ? 'bg-gray-100' : ''}`}
               >
                 <UserCircleIcon className="h-5 w-5" />
                 My Profile
@@ -353,10 +302,30 @@ export default function UserPage() {
                   router.push('/orders');
                   setMobileMenuOpen(false);
                 }}
-                className="w-full text-left block px-3 py-2 rounded hover:bg-gray-100 font-medium transition flex items-center gap-3"
+                className={`w-full text-left block px-3 py-2 rounded hover:bg-gray-100 font-medium transition flex items-center gap-3 ${pathname === '/orders' ? 'bg-gray-100' : ''}`}
               >
                 <ShoppingBagIcon className="h-5 w-5" />
                 My Orders
+              </button>
+              <button
+                onClick={() => {
+                  router.push('/messages');
+                  setMobileMenuOpen(false);
+                }}
+                className={`w-full text-left block px-3 py-2 rounded hover:bg-gray-100 font-medium transition flex items-center gap-3 ${pathname === '/messages' ? 'bg-gray-100' : ''}`}
+              >
+                <EnvelopeIcon className="h-5 w-5" />
+                Messages
+              </button>
+              <button
+                onClick={() => {
+                  router.push('/reviews');
+                  setMobileMenuOpen(false);
+                }}
+                className={`w-full text-left block px-3 py-2 rounded hover:bg-gray-100 font-medium transition flex items-center gap-3 ${pathname === '/reviews' ? 'bg-gray-100' : ''}`}
+              >
+                <StarIcon className="h-5 w-5" />
+                Ratings & Reviews
               </button>
               <button
                 onClick={() => {
@@ -415,28 +384,13 @@ export default function UserPage() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-2">
-                    <h1 className="text-3xl font-bold text-gray-900">{userProfile.fullName}</h1>
+                    <h1 className="text-3xl font-bold text-gray-900">{profile.fullName}</h1>
                     <span className="px-4 py-2 rounded-full font-semibold text-sm bg-green-100 text-green-600">
                       Active Member
                     </span>
                   </div>
-                  <p className="text-gray-600 mb-4">Member since {userProfile.joinedDate}</p>
+                  <p className="text-gray-600 mb-4">Member since {profile.joinedDate}</p>
 
-                  <div className="flex flex-wrap gap-4">
-                    <button
-                      onClick={() => router.push('/orders')}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
-                    >
-                      View All Orders
-                    </button>
-                    <button
-                      onClick={() => document.getElementById('settings')?.scrollIntoView({ behavior: 'smooth' })}
-                      className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition font-medium"
-                    >
-                      <CogIcon className="h-5 w-5" />
-                      Settings
-                    </button>
-                  </div>
                 </div>
               </div>
             </div>
@@ -449,14 +403,14 @@ export default function UserPage() {
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
                   <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
                     <EnvelopeIcon className="h-5 w-5 text-gray-500" />
-                    <p className="text-gray-900">{userProfile.email}</p>
+                    <p className="text-gray-900">{profile.email}</p>
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Phone Number</label>
                   <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
                     <PhoneIcon className="h-5 w-5 text-gray-500" />
-                    <p className="text-gray-900">{userProfile.phone}</p>
+                    <p className="text-gray-900">{profile.phone}</p>
                   </div>
                 </div>
               </div>
@@ -470,13 +424,13 @@ export default function UserPage() {
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Country</label>
                   <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
                     <MapPinIcon className="h-5 w-5 text-gray-500" />
-                    <p className="text-gray-900">{userProfile.country}</p>
+                    <p className="text-gray-900">{profile.country}</p>
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Street Address</label>
                   <div className="p-4 bg-gray-50 rounded-lg">
-                    <p className="text-gray-900">{userProfile.address}</p>
+                    <p className="text-gray-900">{profile.address}</p>
                   </div>
                 </div>
               </div>
@@ -487,11 +441,11 @@ export default function UserPage() {
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-bold text-gray-900">Recent Orders</h2>
                 <span className="px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-sm font-semibold">
-                  {userProfile.orders.length} orders
+                  {profile.orders.length} orders
                 </span>
               </div>
 
-              {userProfile.orders.length > 0 ? (
+              {profile.orders.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-gray-50 border-b">
@@ -504,7 +458,7 @@ export default function UserPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {userProfile.orders.map((order) => (
+                      {profile.orders.map((order) => (
                         <tr key={order.id} className="border-b hover:bg-gray-50 transition">
                           <td className="px-6 py-4 text-sm font-medium text-gray-900">{order.id}</td>
                           <td className="px-6 py-4 text-sm text-gray-700">{order.date}</td>
@@ -535,24 +489,157 @@ export default function UserPage() {
             {/* Account Settings */}
             <div className="bg-white shadow rounded-lg p-8" id="settings">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Account Settings</h2>
-              <div className="space-y-3">
-                <button className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-gray-900">
-                  Edit Profile
-                </button>
-                <button className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-gray-900">
-                  Change Password
-                </button>
-                <button className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-gray-900">
-                  Notification Preferences
-                </button>
-                <button
-                  onClick={handleSignOut}
-                  className="w-full text-left px-4 py-3 bg-red-50 hover:bg-red-100 rounded-lg transition font-medium text-red-600"
-                >
-                  Sign Out
-                </button>
-              </div>
+              {settingsSection === 'menu' && (
+                <div className="space-y-3">
+                  <button
+                    onClick={() => setSettingsSection('editProfile')}
+                    className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-gray-900"
+                  >
+                    Personal Information
+                  </button>
+                  <button
+                    onClick={() => setSettingsSection('payment')}
+                    className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-gray-900"
+                  >
+                    Payment Settings
+                  </button>
+                  <button
+                    onClick={() => setSettingsSection('security')}
+                    className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-gray-900"
+                  >
+                    Security Settings
+                  </button>
+                  <button
+                    onClick={() => setSettingsSection('shipping')}
+                    className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-gray-900"
+                  >
+                    Shipping / Delivery Info
+                  </button>
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full text-left px-4 py-3 bg-red-50 hover:bg-red-100 rounded-lg transition font-medium text-red-600"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              )}
+
+              {settingsSection === 'editProfile' && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input
+                      type="text"
+                      placeholder="Full Name"
+                      value={profileForm.fullName}
+                      onChange={(e) =>
+                        setProfileForm({ ...profileForm, fullName: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                    <input
+                      type="tel"
+                      placeholder="Phone"
+                      value={profileForm.phone}
+                      onChange={(e) =>
+                        setProfileForm({ ...profileForm, phone: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <select
+                      value={profileForm.country}
+                      onChange={(e) =>
+                        setProfileForm({
+                          ...profileForm,
+                          country: e.target.value,
+                          region: '',
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    >
+                      <option value="GB">United Kingdom</option>
+                      <option value="US">United States</option>
+                      <option value="GH">Ghana</option>
+                    </select>
+                    {(profileForm.country === 'GB' || profileForm.country === 'GH') && (
+                      <input
+                        type="text"
+                        placeholder="Region/State"
+                        value={profileForm.region}
+                        onChange={(e) =>
+                          setProfileForm({
+                            ...profileForm,
+                            region: e.target.value.toUpperCase(),
+                          })
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      />
+                    )}
+                    {profileForm.country === 'US' && (
+                      <select
+                        value={profileForm.region}
+                        onChange={(e) =>
+                          setProfileForm({ ...profileForm, region: e.target.value })
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      >
+                        <option value="">Select State</option>
+                        <option value="CA">California</option>
+                        <option value="CO">Colorado</option>
+                        <option value="GA">Georgia</option>
+                      </select>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <input
+                      type="text"
+                      placeholder="Street Address"
+                      value={profileForm.address}
+                      onChange={(e) =>
+                        setProfileForm({ ...profileForm, address: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                    <input
+                      type="text"
+                      placeholder="City"
+                      value={profileForm.city}
+                      onChange={(e) =>
+                        setProfileForm({ ...profileForm, city: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Post Code"
+                    value={profileForm.postCode}
+                    onChange={(e) =>
+                      setProfileForm({ ...profileForm, postCode: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  />
+                  <button
+                    onClick={saveProfile}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                  >
+                    Save Settings
+                  </button>
+                </div>
+              )}
+
+              {settingsSection === 'payment' && (
+                <p className="text-gray-600">Payment settings coming soon.</p>
+              )}
+              {settingsSection === 'security' && (
+                <p className="text-gray-600">Security settings coming soon.</p>
+              )}
+              {settingsSection === 'shipping' && (
+                <p className="text-gray-600">Shipping/delivery information coming soon.</p>
+              )}
             </div>
+
           </div>
         </div>
       </div>

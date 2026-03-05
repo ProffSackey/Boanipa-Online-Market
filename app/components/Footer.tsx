@@ -22,11 +22,6 @@ export default function Footer() {
                 </a>
               </li>
               <li>
-                <a href="/category" className="text-[#F2F2F2] hover:text-orange-300">
-                  Categories
-                </a>
-              </li>
-              <li>
                 <a href="/cart" className="text-[#F2F2F2] hover:text-orange-300">
                   Cart
                 </a>
