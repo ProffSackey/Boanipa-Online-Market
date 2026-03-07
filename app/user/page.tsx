@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
+export const dynamic = 'force-dynamic';
 import { useRouter, usePathname } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 import { ArrowLeftIcon, EnvelopeIcon, PhoneIcon, MapPinIcon, CogIcon, Bars3Icon, UserCircleIcon, ShoppingBagIcon, StarIcon, ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";

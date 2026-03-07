@@ -9,15 +9,14 @@ const rl = readline.createInterface({
 });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('Error: Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in .env.local');
+if (!supabaseUrl) {
+  console.error('Error: Missing NEXT_PUBLIC_SUPABASE_URL in .env.local');
   process.exit(1);
 }
 
 // Use service role key for admin API access (no email verification needed)
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+let supabase;
 
 function askQuestion(question) {
   return new Promise((resolve) => {
@@ -29,6 +28,22 @@ function askQuestion(question) {
 
 async function createAdmin() {
   try {
+    let developerToken = process.env.DEVELOPER_TOKEN;
+    
+    // If no token in env, request it from user
+    if (!developerToken) {
+      developerToken = await askQuestion('\n🔐 Enter your Supabase Service Role Key (Developer Token): ');
+    }
+    
+    if (!developerToken) {
+      console.error('Error: Developer token is required');
+      rl.close();
+      process.exit(1);
+    }
+
+    // Initialize Supabase client with provided token
+    supabase = createClient(supabaseUrl, developerToken);
+
     const email = await askQuestion('Enter admin email: ');
     const password = await askQuestion('Enter admin password: ');
     const fullName = await askQuestion('Enter admin full name: ');

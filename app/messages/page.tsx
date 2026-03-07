@@ -1,11 +1,14 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
 import Link from "next/link";
 import { useUserAuth } from "../../lib/useUserAuth";
+
+// Prevent static prerendering since this page requires runtime user auth
+export const dynamic = 'force-dynamic';
 
 interface ChatMessage {
   id: string;
@@ -14,7 +17,7 @@ interface ChatMessage {
   time: string;
 }
 
-export default function MessagesPage() {
+function MessagesContent() {
   const { user, loading: authLoading } = useUserAuth();
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -350,5 +353,20 @@ export default function MessagesPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function MessagesPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-orange-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <MessagesContent />
+    </Suspense>
   );
 }

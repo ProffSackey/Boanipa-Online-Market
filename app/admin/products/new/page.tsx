@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = 'force-dynamic';
+
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import AdminNavbar from "../../../components/AdminNavbar";
@@ -16,8 +18,6 @@ interface Product {
   price: string;
   quantity?: number; // inventory count
 }
-
-export const dynamic = 'force-dynamic';
 
 export default function NewProductPage() {
   const router = useRouter();
