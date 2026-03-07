@@ -27,9 +27,10 @@ export async function POST(request: NextRequest) {
         sender_email: email,
         recipient_email: 'admin@boanipa.com',
         body: safeContent,
-    }
+    }])
+    .select();
 
-    return NextResponse.json({ success: true, message: data[0] });
+    return NextResponse.json({ success: true, message: data?.[0] || null });
   } catch (error) {
     console.error('Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

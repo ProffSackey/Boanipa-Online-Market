@@ -99,7 +99,7 @@ export default function ProductCard({ product: p, promotions = [], user, addingT
         <div className="flex flex-col gap-2">
           {/* Price Section */}
           {discount ? (
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-500 line-through">
                   {discount.formatted.original || '£0.00'}
@@ -108,7 +108,7 @@ export default function ProductCard({ product: p, promotions = [], user, addingT
                   {discount.formatted.discounted || '£0.00'}
                 </span>
               </div>
-              <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded font-semibold whitespace-nowrap">
+              <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded font-semibold max-w-full truncate">
                 Save {discount.savingsPercent.toFixed(0)}%
               </span>
             </div>
