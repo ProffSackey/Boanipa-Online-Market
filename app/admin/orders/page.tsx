@@ -109,7 +109,7 @@ export default function OrdersPage() {
   // Helper function to calculate total quantity
   const getTotalQuantity = (order: Order) => {
     if (Array.isArray(order.itemsDetail)) {
-      return (order.itemsDetail as any[]).reduce((sum, item) => sum + (item.quantity || 1), 0);
+      return order.itemsDetail.reduce((sum, item) => sum + (item.quantity || 1), 0);
     }
     return order.items || 0;
   };

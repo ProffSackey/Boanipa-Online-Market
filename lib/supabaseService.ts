@@ -144,6 +144,11 @@ export const createPromotion = async (promotion: Promotion): Promise<Promotion |
       start_date: promotion.start_date
     });
 
+    if (!supabaseAdmin) {
+      console.error('supabaseAdmin is not configured (missing SUPABASE_SERVICE_ROLE_KEY)');
+      return null;
+    }
+
     const { data, error } = await supabaseAdmin
       .from('promotions')
       .insert([promotion])
@@ -156,7 +161,6 @@ export const createPromotion = async (promotion: Promotion): Promise<Promotion |
         details: error.details,
         hint: error.hint,
         code: error.code,
-        status: error.status,
         promotionData: promotion
       });
       return null;
@@ -181,6 +185,11 @@ export const createPromotion = async (promotion: Promotion): Promise<Promotion |
 export const updatePromotion = async (id: string, updates: Partial<Promotion>): Promise<Promotion | null> => {
   try {
     console.log('[updatePromotion] Updating promotion:', { id, updates });
+
+    if (!supabaseAdmin) {
+      console.error('supabaseAdmin is not configured (missing SUPABASE_SERVICE_ROLE_KEY)');
+      return null;
+    }
 
     const { data, error } = await supabaseAdmin
       .from('promotions')

@@ -14,6 +14,7 @@ interface Order {
   shippingCost?: string;
   tax?: string;
   total?: string;
+  itemsDetail?: Array<{ productId: string; quantity: number; price: number; name?: string; image?: string }>;
 }
 
 const mockOrders: Order[] = [];
