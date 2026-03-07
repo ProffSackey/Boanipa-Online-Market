@@ -22,9 +22,9 @@ export const supabaseServer = createClient(url, anonKey);
 
 // server-side client using service role key for privileged operations
 export const getSupabaseAdmin = () => {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.DEVELOPER_TOKEN;
   if (!serviceRoleKey) {
-    console.warn('SUPABASE_SERVICE_ROLE_KEY not available');
+    console.warn('SUPABASE_SERVICE_ROLE_KEY or DEVELOPER_TOKEN not available');
     return null;
   }
   return createClient(url, serviceRoleKey);
