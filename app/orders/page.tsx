@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { formatPrice } from "@/lib/promotionUtils";
+import { useUserAuth } from "../../lib/useUserAuth";
 
 interface Order {
   id: string;
@@ -17,23 +18,18 @@ interface Order {
 
 export default function OrdersPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useUserAuth();
   const [orders, setOrders] = useState<Order[]>([]);
-  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) {
-        router.push("/login");
-        return;
-      }
-      setUser(data.session.user);
+    if (!user) return;
 
-      // Fetch orders for this user
+    // Fetch orders for this user
+    const fetchOrders = async () => {
       try {
-        const userEmail = data.session.user.email || '';
+        const userEmail = user.email || '';
         const res = await fetch(`/api/customer-orders?email=${encodeURIComponent(userEmail)}`);
         if (res.ok) {
           const data = await res.json();
@@ -45,12 +41,11 @@ export default function OrdersPage() {
         console.error("Error fetching orders:", err);
         setError("Failed to load orders");
       }
-
       setLoading(false);
     };
 
-    checkAuth();
-  }, [router]);
+    fetchOrders();
+  }, [user]);
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -150,8 +145,8 @@ export default function OrdersPage() {
                     {formatPrice(parseFloat(String(order.total_amount || '0').replace(/[£$,]/g, '')))}
                   </p>
                   <button
-                    onClick={() => router.push(`/orders/${order.id}`)}
-                    className="px-4 py-2 text-orange-600 border border-orange-600 rounded-lg hover:bg-orange-50 transition"
+                    onClick={() => router.push(`/orders/${order.order_number}`)}
+                    className="px-4 py-2 text-orange-600 border border-orange-600 rounded-lg hover:bg-orange-50 transition font-semibold"
                   >
                     View Details
                   </button>

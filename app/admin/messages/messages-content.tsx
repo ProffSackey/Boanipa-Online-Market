@@ -276,11 +276,11 @@ export default function MessagesPageContent() {
           </div>
 
           {/* Conversation area */}
-          <div className="hidden md:flex flex-1 flex-col bg-white">
+          <div className="hidden md:flex flex-1 flex-col bg-white overflow-hidden">
             {selectedThread ? (
               <>
                 {/* Header */}
-                <div className="px-6 py-4 border-b border-gray-200 bg-white shadow-sm">
+                <div className="px-6 py-4 border-b border-gray-200 bg-white shadow-sm flex-shrink-0">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className={`${getInitialColor(selectedThread.id)} text-white rounded-full w-12 h-12 flex items-center justify-center text-base font-semibold relative`}>
@@ -296,7 +296,7 @@ export default function MessagesPageContent() {
                   </div>
                 </div>
 
-                {/* Messages */}
+                {/* Messages - scrollable container */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
                   {chatMessages.map((msg) => (
                     <div key={msg.id} className={`flex ${msg.fromAdmin ? "justify-end" : "justify-start"}`}>
@@ -315,18 +315,20 @@ export default function MessagesPageContent() {
                                 {(() => {
                                   const imageUrlMatch = msg.content.match(/!\[Product Image\]\((.*?)\)/);
                                   const imageUrl = imageUrlMatch?.[1];
-                                  return imageUrl && imageUrl.includes('.') ? (
+                                  // Check if URL is valid: should have http(s) and an extension
+                                  const isValidUrl = imageUrl && (imageUrl.includes('http') || imageUrl.includes('public/')) && 
+                                    /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(imageUrl);
+                                  return isValidUrl ? (
                                     <img
                                       src={imageUrl}
                                       alt="Product"
                                       className="max-w-xs h-auto rounded-lg border-2 border-gray-300"
                                       onError={(e) => {
-                                        console.error('Image failed to load:', imageUrl);
                                         (e.target as HTMLImageElement).style.display = 'none';
                                       }}
                                     />
                                   ) : (
-                                    <p className="text-xs opacity-75">Product image</p>
+                                    <p className="text-xs opacity-75">Product image (unavailable)</p>
                                   );
                                 })()}
                               </div>
@@ -341,8 +343,8 @@ export default function MessagesPageContent() {
                   <div ref={messagesEndRef} />
                 </div>
 
-                {/* Message input */}
-                <div className="px-6 py-4 border-t border-gray-200 bg-white">
+                {/* Message input - sticky at bottom */}
+                <div className="px-6 py-4 border-t border-gray-200 bg-white flex-shrink-0 sticky bottom-0 z-10 shadow-lg">
                   <div className="flex gap-2">
                     <input
                       type="text"

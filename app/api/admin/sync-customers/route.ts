@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '../../../../lib/supabaseClient';
+import { getSupabaseAdmin } from '../../../../lib/supabaseClient';
 
 export async function POST(request: NextRequest) {
   try {
+    const supabaseAdmin = getSupabaseAdmin();
     if (!supabaseAdmin) {
       console.error('supabaseAdmin is not configured (missing SUPABASE_SERVICE_ROLE_KEY)');
       return NextResponse.json({ error: 'Server misconfiguration: supabase admin unavailable' }, { status: 500 });

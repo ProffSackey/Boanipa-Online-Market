@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { getCartItems, updateCartItemQuantity, removeFromCart, clearCart, addToCart } from "@/lib/supabaseService";
 import { MinusIcon, PlusIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { getGuestCart, clearGuestCart } from "@/lib/cartUtils";
+import { useUserAuth } from "../../lib/useUserAuth";
 
 interface CartItem {
   id: string;
@@ -38,8 +39,8 @@ interface ShippingRate {
 
 export default function CartPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useUserAuth();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo>({
     country: "GB",
@@ -55,87 +56,88 @@ export default function CartPage() {
   const [calculating, setCalculating] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [userInitiated, setUserInitiated] = useState(false); // Track if user has changed country/region
 
   // Load cart from Supabase or localStorage on mount
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        setUser(data.session.user);
-        const meta = data.session.user.user_metadata || {};
+    if (!user) return;
 
-        // Normalize country to ISO codes where possible
-        const rawCountry = (meta.address?.country || shippingInfo.country || "").toString();
-        const countryKey = rawCountry.trim().toUpperCase();
-        const countryMap: Record<string, string> = {
-          'GHANA': 'GH', 'GH': 'GH',
-          'UNITED KINGDOM': 'GB', 'UK': 'GB', 'GB': 'GB',
-          'UNITED STATES': 'US', 'USA': 'US', 'US': 'US'
-        };
-        const normalizedCountry = countryMap[countryKey] || rawCountry;
+    const loadCart = async () => {
+      const meta = user.user_metadata || {};
 
-        setShippingInfo((prev) => ({
-          ...prev,
-          fullName: meta.full_name || "",
-          email: data.session.user.email || "",
-          phone: meta.phone || "",
-          address: meta.address?.street || "",
-          city: meta.address?.city || "",
-          postCode: meta.address?.postCode || "",
-          country: normalizedCountry,
-          region: meta.address?.region || prev.region,
-        }));
+      // Normalize country to ISO codes where possible
+      const rawCountry = (meta.address?.country || shippingInfo.country || "").toString();
+      const countryKey = rawCountry.trim().toUpperCase();
+      const countryMap: Record<string, string> = {
+        'GHANA': 'GH', 'GH': 'GH',
+        'UNITED KINGDOM': 'GB', 'UK': 'GB', 'GB': 'GB',
+        'UNITED STATES': 'US', 'USA': 'US', 'US': 'US'
+      };
+      const normalizedCountry = countryMap[countryKey] || rawCountry;
 
-        // gently remind user to complete profile if key fields missing
-        if (
-          !meta.full_name ||
-          !meta.phone ||
-          !meta.address?.street ||
-          !meta.address?.city ||
-          !meta.address?.postCode
-        ) {
-          setError(
-            "Your account is missing some shipping details – please update your profile before placing an order."
-          );
-        }
+      setShippingInfo((prev) => ({
+        ...prev,
+        fullName: meta.full_name || "",
+        email: user.email || "",
+        phone: meta.phone || "",
+        address: meta.address?.street || "",
+        city: meta.address?.city || "",
+        postCode: meta.address?.postCode || "",
+        country: normalizedCountry,
+        region: meta.address?.region || prev.region,
+      }));
 
-        // Load cart from Supabase (safe: catch and log details)
-        let items: CartItem[] = [];
-        try {
-          const userEmail = data.session.user.email || "";
-          console.log('Fetching cart for user:', userEmail);
-          items = await getCartItems(userEmail);
-        } catch (err) {
-          console.error('Failed to get cart items (detailed):', err);
-          items = [];
-        }
-
-        // Also check for guest cart and merge if exists
-        const guestCart = getGuestCart();
-        if (guestCart.length > 0) {
-          // Add guest cart items to user cart
-          for (const guestItem of guestCart) {
-            await addToCart(data.session.user.email || "", guestItem.productId, guestItem.quantity);
-          }
-          // Clear guest cart after merging
-          clearGuestCart();
-          // Reload items
-          try {
-            const updatedItems = await getCartItems(data.session.user.email || "");
-            setCartItems(updatedItems);
-          } catch (err) {
-            console.error('Failed to reload cart items after merge:', err);
-            setCartItems([]);
-          }
-        } else {
-          setCartItems(items);
-        }
+      // gently remind user to complete profile if key fields missing
+      if (
+        !meta.full_name ||
+        !meta.phone ||
+        !meta.address?.street ||
+        !meta.address?.city ||
+        !meta.address?.postCode
+      ) {
+        setError(
+          "Your account is missing some shipping details – please update your profile before placing an order."
+        );
       }
+
+      // Load cart from Supabase (safe: catch and log details)
+      let items: CartItem[] = [];
+      try {
+        const userEmail = user.email || "";
+        // console.log('Fetching cart for user:', userEmail); // Removed for security
+        items = await getCartItems(userEmail);
+      } catch (err) {
+        console.error('Failed to get cart items (detailed):', err);
+        items = [];
+      }
+
+      // Also check for guest cart and merge if exists
+      const guestCart = getGuestCart();
+      if (guestCart.length > 0) {
+        // Add guest cart items to user cart
+        for (const guestItem of guestCart) {
+          // Use a high default stock value since actual stock will be validated at checkout
+          await addToCart(user.email || "", guestItem.productId, guestItem.quantity, 999);
+        }
+        // Clear guest cart after merging
+        clearGuestCart();
+        // Reload items
+        try {
+          const updatedItems = await getCartItems(user.email || "");
+          setCartItems(updatedItems);
+        } catch (err) {
+          console.error('Failed to reload cart items after merge:', err);
+          setCartItems([]);
+        }
+      } else {
+        setCartItems(items);
+      }
+
       setLoading(false);
     };
 
-    checkAuth();
-  }, []);
+    loadCart();
+  }, [user]);
 
   // Subscribe to app-level cart change events so this page updates in real-time
   useEffect(() => {
@@ -154,20 +156,18 @@ export default function CartPage() {
     return () => window.removeEventListener('userCartChange', handler as EventListener);
   }, [user]);
 
-  // Calculate shipping fee when country/region changes
+  // Calculate shipping fee when country/region changes (only if user initiated)
   useEffect(() => {
-    if (!shippingInfo.country) return;
+    if (!shippingInfo.country || !userInitiated) return;
 
     const calcShipping = async () => {
       setCalculating(true);
       setError("");
       try {
+        const location = shippingInfo.region || shippingInfo.country;
         const params = new URLSearchParams({
-          country: shippingInfo.country,
+          location: location,
         });
-        if (shippingInfo.region) {
-          params.append("region", shippingInfo.region);
-        }
 
         const res = await fetch(`/api/shipping-rates?${params}`);
         if (!res.ok) {
@@ -192,7 +192,7 @@ export default function CartPage() {
     };
 
     calcShipping();
-  }, [shippingInfo.country, shippingInfo.region]);
+  }, [shippingInfo.country, shippingInfo.region, userInitiated]);
 
   const updateQuantity = async (productId: string, quantity: number) => {
     if (!user?.email) return;
@@ -200,7 +200,9 @@ export default function CartPage() {
     if (quantity <= 0) {
       removeItem(productId);
     } else {
-      await updateCartItemQuantity(user.email, productId, quantity);
+      const cartItem = cartItems.find((item) => item.product_id === productId);
+      const stock = cartItem?.product?.stock_quantity || 0;
+      await updateCartItemQuantity(user.email, productId, quantity, stock);
       const updated = cartItems.map((item) =>
         item.product_id === productId ? { ...item, quantity } : item
       );
@@ -253,13 +255,33 @@ export default function CartPage() {
     setError("");
 
     try {
+      // Update user metadata with shipping address for future use
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: {
+          full_name: shippingInfo.fullName,
+          phone: shippingInfo.phone,
+          address: {
+            street: shippingInfo.address,
+            city: shippingInfo.city,
+            postCode: shippingInfo.postCode,
+            country: shippingInfo.country,
+            region: shippingInfo.region,
+          },
+        },
+      });
+
+      if (updateError) {
+        console.error('Failed to update user metadata:', updateError);
+        // Don't fail the order for this, just log
+      }
+
       // Create order via API
       const orderData = {
         customer_name: shippingInfo.fullName,
         customer_email: shippingInfo.email,
         customer_phone: shippingInfo.phone,
         items: cartItems.map((item) => ({
-          productId: item.product_id,
+          product_id: item.product_id,
           quantity: item.quantity,
           price: parseFloat(item.product?.price?.replace("£", "") || "0"),
         })),
@@ -511,13 +533,14 @@ export default function CartPage() {
                   />
                   <select
                     value={shippingInfo.country}
-                    onChange={(e) =>
+                    onChange={(e) => {
                       setShippingInfo({
                         ...shippingInfo,
                         country: e.target.value,
                         region: "",
-                      })
-                    }
+                      });
+                      setUserInitiated(true);
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                   >
                     <option value="GB">United Kingdom</option>
@@ -530,9 +553,10 @@ export default function CartPage() {
                       type="text"
                       placeholder="Region Code (e.g., SW, NW)"
                       value={shippingInfo.region}
-                      onChange={(e) =>
-                        setShippingInfo({ ...shippingInfo, region: e.target.value.toUpperCase() })
-                      }
+                      onChange={(e) => {
+                        setShippingInfo({ ...shippingInfo, region: e.target.value.toUpperCase() });
+                        setUserInitiated(true);
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                     />
                   )}
@@ -542,9 +566,10 @@ export default function CartPage() {
                       type="text"
                       placeholder="Region / State"
                       value={shippingInfo.region}
-                      onChange={(e) =>
-                        setShippingInfo({ ...shippingInfo, region: e.target.value })
-                      }
+                      onChange={(e) => {
+                        setShippingInfo({ ...shippingInfo, region: e.target.value });
+                        setUserInitiated(true);
+                      }}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
                     />
                   )}

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import AdminNavbar from "../../components/AdminNavbar";
 import { supabase } from '@/lib/supabaseClient';
 import { HomeIcon, UserGroupIcon, ShoppingCartIcon, CubeIcon, CreditCardIcon, ChartBarIcon, StarIcon, GiftIcon, BellIcon, EnvelopeIcon, CogIcon, CheckIcon, TrashIcon, PencilIcon } from "@heroicons/react/24/outline";
+import { useAdminSession } from "../../../lib/useAdminSession";
 
 interface ShippingZone {
   id?: string;
@@ -26,12 +27,12 @@ const tabs = [
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { sessionChecked } = useAdminSession();
   const [activeTab, setActiveTab] = useState("General");
   const [freeShippingThreshold, setFreeShippingThreshold] = useState("50.00");
   const [autoTax, setAutoTax] = useState(true);
   const [autoDistanceFee, setAutoDistanceFee] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [sessionChecked, setSessionChecked] = useState(false);
   const [saved, setSaved] = useState(false);
   
   // Shipping zones state
@@ -54,20 +55,6 @@ export default function SettingsPage() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-
-  useEffect(() => {
-    fetch('/api/admin/verify-session', { credentials: 'include' })
-      .then((res) => {
-        if (!res.ok) {
-          router.push('/admin/login');
-        } else {
-          setSessionChecked(true);
-        }
-      })
-      .catch(() => {
-        router.push('/admin/login');
-      });
-  }, [router]);
 
 
 
@@ -201,7 +188,7 @@ export default function SettingsPage() {
       // retrieve fresh access token from Supabase client session
       const { data: { session } } = await supabase.auth.getSession();
       const currentToken = session?.access_token;
-      console.log('[SETTINGS] Token retrieved from Supabase session:', !!currentToken);
+      // console.log('[SETTINGS] Token retrieved from Supabase session:', !!currentToken); // Removed for security
 
       const requestBody: any = {
         currentPassword,
@@ -209,7 +196,7 @@ export default function SettingsPage() {
       };
       if (currentToken) requestBody.accessToken = currentToken;
 
-      console.log('[SETTINGS] Sending request body with keys:', Object.keys(requestBody));
+      // console.log('[SETTINGS] Sending request body with keys:', Object.keys(requestBody)); // Removed for security
       
       const response = await fetch('/api/admin/change-password', {
         method: 'POST',
@@ -232,11 +219,33 @@ export default function SettingsPage() {
       }
 
       alert('Password updated successfully');
+      // clear form fields
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
+
+      // refresh Supabase session using new password so token stays valid
+      try {
+        const {
+          data: { session: newSession },
+          error: refreshError,
+        } = await supabase.auth.signInWithPassword({
+          email: session?.user?.email || '',
+          password: newPassword,
+        });
+        if (refreshError) {
+          console.warn('[SETTINGS] could not refresh session after password change', refreshError);
+          // if we cannot refresh, force logout to avoid stale token
+          await supabase.auth.signOut();
+          router.push('/admin/login');
+        } else if (newSession) {
+          console.log('[SETTINGS] session refreshed after password update');
+        }
+      } catch (refreshErr) {
+        console.error('[SETTINGS] error refreshing session', refreshErr);
+      }
     } catch (error) {
       console.error('Error changing password:', error);
       alert(`Error: ${error instanceof Error ? error.message : String(error)}`);

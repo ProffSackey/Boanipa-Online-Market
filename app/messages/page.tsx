@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { supabase } from "../../lib/supabaseClient";
 import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
 import Link from "next/link";
+import { useUserAuth } from "../../lib/useUserAuth";
 
 interface ChatMessage {
   id: string;
@@ -14,7 +15,7 @@ interface ChatMessage {
 }
 
 export default function MessagesPage() {
-  const [user, setUser] = useState<any>(null);
+  const { user, loading: authLoading } = useUserAuth();
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -24,42 +25,16 @@ export default function MessagesPage() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    // Get current user
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session?.user) {
-        setUser(data.session.user);
-        loadMessages(data.session.user.email);
-        
-        // Check for product ID in URL
-        const productId = searchParams.get('productId');
-        if (productId) {
-          fetchProductInfo(productId);
-        }
-      } else {
-        setLoading(false);
-      }
-    });
+    if (!user) return;
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) {
-        setUser(session.user);
-        loadMessages(session.user.email);
-        
-        // Check for product ID in URL
-        const productId = searchParams.get('productId');
-        if (productId) {
-          fetchProductInfo(productId);
-        }
-      } else {
-        setUser(null);
-        setChatMessages([]);
-        setLoading(false);
-      }
-    });
+    loadMessages(user.email);
 
-    return () => subscription?.unsubscribe();
-  }, [searchParams]);
+    // Check for product ID in URL
+    const productId = searchParams.get('productId');
+    if (productId) {
+      fetchProductInfo(productId);
+    }
+  }, [user, searchParams]);
 
   useEffect(() => {
     if (!user) return;
@@ -104,12 +79,16 @@ export default function MessagesPage() {
       const response = await fetch(`/api/debug/products?id=${productId}`);
       if (response.ok) {
         const product = await response.json();
-        console.log('[MESSAGES] Fetched product:', product);
+        // console.log('[MESSAGES] Fetched product:', product); // Removed for security
         if (product && product.name && product.price) {
+          let img = product.image_url;
+          if (img) {
+            img = img.replace(/\(/g, '%28').replace(/\)/g, '%29');
+          }
           setProductInfo({ 
             name: product.name, 
             price: product.price,
-            imageUrl: product.image_url 
+            imageUrl: img 
           });
         }
       } else {
@@ -245,21 +224,44 @@ export default function MessagesPage() {
                       <div className="space-y-2">
                         <p>{message.content.split('\n\n![Product Image](')[0]}</p>
                         {(() => {
-                          const imageUrlMatch = message.content.match(/!\[Product Image\]\((.*?)\)/);
-                          const imageUrl = imageUrlMatch?.[1];
-                          return imageUrl && imageUrl.includes('.') ? (
-                            <img
-                              src={imageUrl}
-                              alt="Product"
-                              className="max-w-xs h-auto rounded-lg border-2 border-gray-300"
-                              onError={(e) => {
-                                console.error('Image failed to load:', imageUrl);
-                                (e.target as HTMLImageElement).style.display = 'none';
-                              }}
-                            />
-                          ) : (
-                            <p className="text-xs opacity-75">Product image</p>
-                          );
+                          // extract URL more carefully, accounting for encoded parentheses
+                          const markdownStart = message.content.indexOf('![Product Image](');
+                          let imageUrl: string | undefined;
+                          if (markdownStart !== -1) {
+                            // find closing paren after start
+                            let idx = markdownStart + '![Product Image]('.length;
+                            let parenCount = 0;
+                            while (idx < message.content.length) {
+                              const ch = message.content[idx];
+                              if (ch === ')') {
+                                if (parenCount === 0) break;
+                                parenCount--;
+                              } else if (ch === '(') {
+                                parenCount++;
+                              }
+                              idx++;
+                            }
+                            imageUrl = message.content.substring(markdownStart + '![Product Image]('.length, idx);
+                          }
+
+                          const isValidUrl = imageUrl && (imageUrl.includes('http') || imageUrl.includes('public/')) &&
+                            /\.(jpg|jpeg|png|gif|webp)(\?|$)/i.test(imageUrl);
+
+                          if (isValidUrl) {
+                            return (
+                              <img
+                                src={imageUrl!}
+                                alt="Product"
+                                className="max-w-xs h-auto rounded-lg border-2 border-gray-300"
+                                onError={(e) => {
+                                  // hide if cannot load
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
+                            );
+                          } else {
+                            return <p className="text-xs opacity-75">Product image</p>;
+                          }
                         })()}
                       </div>
                     ) : (
@@ -301,7 +303,11 @@ export default function MessagesPage() {
                 onClick={() => {
                   let message = `Hi, I'm interested in "${productInfo.name}" priced at $${productInfo.price}. `;
                   if (productInfo.imageUrl) {
-                    message += `\n\n![Product Image](${productInfo.imageUrl})`;
+                    // ensure URL is safe (encode parentheses which break markdown parsing)
+                    const safeUrl = productInfo.imageUrl
+                      .replace(/\(/g, '%28')
+                      .replace(/\)/g, '%29');
+                    message += `\n\n![Product Image](${safeUrl})`;
                   }
                   handleSend({ type: 'click' }, message);
                 }}

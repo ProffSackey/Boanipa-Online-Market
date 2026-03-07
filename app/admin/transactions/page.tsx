@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AdminNavbar from "../../components/AdminNavbar";
 import { MagnifyingGlassIcon, FunnelIcon, HomeIcon, UserGroupIcon, ShoppingCartIcon, CubeIcon, CreditCardIcon, ChartBarIcon, StarIcon, GiftIcon, BellIcon, EnvelopeIcon, CogIcon } from "@heroicons/react/24/outline";
+import { useAdminSession } from "../../../lib/useAdminSession";
 
 interface Transaction {
   id: string;
@@ -30,25 +31,11 @@ const typeColors: Record<string, string> = {
 
 export default function TransactionsPage() {
   const router = useRouter();
+  const { sessionChecked } = useAdminSession();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All Status");
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [sessionChecked, setSessionChecked] = useState(false);
-
-  useEffect(() => {
-    fetch("/api/admin/verify-session")
-      .then((res) => {
-        if (!res.ok) {
-          router.push("/admin/login");
-        } else {
-          setSessionChecked(true);
-        }
-      })
-      .catch(() => {
-        router.push("/admin/login");
-      });
-  }, [router]);
 
   const handleLogout = async () => {
     await fetch("/api/admin/logout", { method: "POST" });

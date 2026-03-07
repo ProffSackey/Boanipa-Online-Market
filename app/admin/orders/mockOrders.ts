@@ -2,6 +2,7 @@ interface Order {
   id: string;
   customer: string;
   email: string;
+  phone: string;
   items: number;
   amount: string;
   status: "Delivered" | "Processing" | "Shipped" | "Cancelled";

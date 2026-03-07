@@ -9,25 +9,12 @@ import SalesByCategory from '../../components/SalesByCategory';
 import RecentOrders from '../../components/RecentOrders';
 import TopProducts from '../../components/TopProducts';
 import { HomeIcon, UserGroupIcon, ShoppingCartIcon, CubeIcon, CreditCardIcon, ChartBarIcon, StarIcon, GiftIcon, BellIcon, EnvelopeIcon, CogIcon } from '@heroicons/react/24/outline';
+import { useAdminSession } from '../../../lib/useAdminSession';
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const [sessionChecked, setSessionChecked] = useState(false);
+  const { sessionChecked } = useAdminSession();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  useEffect(() => {
-    fetch('/api/admin/verify-session')
-      .then((res) => {
-        if (!res.ok) {
-          router.push('/admin/login');
-        } else {
-          setSessionChecked(true);
-        }
-      })
-      .catch(() => {
-        router.push('/admin/login');
-      });
-  }, [router]);
 
   const handleLogout = async () => {
     await fetch('/api/admin/logout', { method: 'POST' });

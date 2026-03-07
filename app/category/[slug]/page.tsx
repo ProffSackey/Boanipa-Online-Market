@@ -8,28 +8,20 @@ import type { Product } from '@/lib/supabaseService';
 import ProductCard from '../../components/ProductCard';
 import { addToGuestCart, subscribeToGuestCartChanges, subscribeToUserCartChanges } from '@/lib/cartUtils';
 import { getUserCartCount } from '@/lib/supabaseService';
+import { useUserAuth } from '../../../lib/useUserAuth';
 
 
 export default function CategoryPage() {
   const { slug } = useParams();
   const router = useRouter();
+  const { user } = useUserAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
   const [addingToCart, setAddingToCart] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
   const categoryName = typeof slug === 'string' ? slug.replace(/-/g, ' ').toUpperCase() : 'Category';
   const categorySlug = typeof slug === 'string' ? slug.replace(/-/g, ' ') : '';
-
-  useEffect(() => {
-    // Check auth status
-    const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      setUser(data.session?.user || null);
-    };
-    checkAuth();
-  }, []);
 
   const handleAddToCart = async (productId: string) => {
     // Find the product to get its details
@@ -40,17 +32,25 @@ export default function CategoryPage() {
       return;
     }
 
+    // Check stock availability
+    const stock = product.stock_quantity ?? 0;
+    if (stock <= 0) {
+      setNotice('Product is out of stock');
+      setTimeout(() => setNotice(null), 4000);
+      return;
+    }
+
     setAddingToCart(productId);
     try {
       if (!user) {
-        // Add to guest cart and wait for cart update before showing confirmation
+        // Add to guest cart with stock validation
         addToGuestCart({
           productId: productId.toString(),
           quantity: 1,
           name: product.name,
           price: product.price.toString(),
           image_url: product.image_url,
-        });
+        }, stock); // Pass available stock
 
         let handled = false;
         const unsubscribe = subscribeToGuestCartChanges((count) => {
@@ -61,8 +61,8 @@ export default function CategoryPage() {
         });
         setTimeout(() => { if (!handled) { handled = true; try { unsubscribe(); } catch {} console.debug('[Cart] guest add fallback'); } }, 1500);
       } else {
-        // Add to user cart and wait for server-side cart update
-        const result = await addToCart(user.email, productId, 1);
+        // Add to user cart with known stock and wait for server-side cart update
+        const result = await addToCart(user.email, productId, 1, stock);
         if (result) {
           let handled = false;
           const unsubscribe = subscribeToUserCartChanges(user.email, () => {
@@ -96,13 +96,13 @@ export default function CategoryPage() {
       const res = await fetch('/api/admin/products');
       if (!res.ok) throw new Error('Failed to fetch products');
       const data = await res.json();
-      console.log('Fetched products from API:', data);
+      // console.log('Fetched products from API:', data); // Removed for security
       
       // Filter products by category
       const filtered = data.filter((p: Product) => 
         p.category.toLowerCase() === categorySlug.toLowerCase()
       );
-      console.log('Filtered products for category:', categorySlug, filtered);
+      // console.log('Filtered products for category:', categorySlug, filtered); // Removed for security
       setProducts(filtered);
     } catch (error) {
       console.error('Error fetching products:', error);

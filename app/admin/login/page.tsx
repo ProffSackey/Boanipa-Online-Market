@@ -33,11 +33,11 @@ export default function AdminLogin() {
 
       const data = await res.json();
       
-      console.log('[LOGIN_PAGE] Response received:', { ok: data.ok, hasAccessToken: !!data.accessToken });
+      // console.log('[LOGIN_PAGE] Response received:', { ok: data.ok, hasAccessToken: !!data.accessToken }); // Removed for security
       
       // Set up Supabase session with the tokens
       if (data.accessToken) {
-        console.log('[LOGIN_PAGE] Setting Supabase session');
+        // console.log('[LOGIN_PAGE] Setting Supabase session'); // Removed for security
         try {
           // Set the session in Supabase client so it manages the auth state
           await supabase.auth.setSession({

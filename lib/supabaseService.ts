@@ -131,20 +131,46 @@ export const fetchPromotion = async (id: string): Promise<Promotion | null> => {
  */
 export const createPromotion = async (promotion: Promotion): Promise<Promotion | null> => {
   try {
-    const { data, error } = await supabase
+    // Log the promotion data being sent for debugging
+    console.log('[createPromotion] Sending promotion data:', {
+      name: promotion.name,
+      code: promotion.code,
+      type: promotion.type,
+      discount: promotion.discount,
+      deadline: promotion.deadline,
+      deadlineType: typeof promotion.deadline,
+      is_active: promotion.is_active,
+      product_ids: promotion.product_ids,
+      start_date: promotion.start_date
+    });
+
+    const { data, error } = await supabaseAdmin
       .from('promotions')
       .insert([promotion])
       .select()
       .single();
 
     if (error) {
-      console.error('Error creating promotion:', error);
+      console.error('Error creating promotion:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+        status: error.status,
+        promotionData: promotion
+      });
       return null;
     }
 
+    console.log('[createPromotion] Promotion created successfully:', data);
     return data || null;
   } catch (error) {
-    console.error('Error creating promotion:', error);
+    console.error('Error creating promotion - Caught Exception:', {
+      errorMessage: error instanceof Error ? error.message : 'Unknown error',
+      errorStack: error instanceof Error ? error.stack : undefined,
+      errorType: typeof error,
+      fullError: error
+    });
     return null;
   }
 };
@@ -154,7 +180,9 @@ export const createPromotion = async (promotion: Promotion): Promise<Promotion |
  */
 export const updatePromotion = async (id: string, updates: Partial<Promotion>): Promise<Promotion | null> => {
   try {
-    const { data, error } = await supabase
+    console.log('[updatePromotion] Updating promotion:', { id, updates });
+
+    const { data, error } = await supabaseAdmin
       .from('promotions')
       .update(updates)
       .eq('id', id)
@@ -162,7 +190,14 @@ export const updatePromotion = async (id: string, updates: Partial<Promotion>): 
       .single();
 
     if (error) {
-      console.error('Error updating promotion:', error);
+      console.error('Error updating promotion:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+        id,
+        updates
+      });
       return null;
     }
 
@@ -583,50 +618,75 @@ export interface ShippingZone {
 }
 
 /**
- * Calculate shipping fee based on country and region (postcode/state)
+ * Calculate shipping fee based on location (zone name, region code, or country)
  */
-export const calculateShippingFee = async (country: string, region?: string): Promise<{ fee: number; minDays: number; maxDays: number } | null> => {
+export const calculateShippingFee = async (location: string): Promise<{ fee: number; minDays: number; maxDays: number } | null> => {
   try {
-    let query = supabase
+    const query = location.toUpperCase();
+
+    // First, try to find by zone name
+    let { data, error } = await supabase
       .from('shipping_zones')
       .select('base_fee, per_km_fee, min_delivery_days, max_delivery_days')
-      .eq('country', country)
-      .eq('is_active', true);
-
-    // If region provided, try exact match first, then country-wide
-    if (region) {
-      const { data, error } = await query;
-      console.log('calculateShippingFee: query returned', { country, region, rows: (data || []).length, error: error || null });
-      if (!error && data && data.length > 0) {
-        // Find matching region (robust, case-insensitive, bidirectional)
-        const qRegion = String(region).toUpperCase();
-        const zoneData = data.find((z: any) => {
-          if (!z.region) return false;
-          const zRegion = String(z.region).toUpperCase();
-          return zRegion.includes(qRegion) || qRegion.includes(zRegion);
-        });
-        if (zoneData) {
-          return {
-            fee: parseFloat(zoneData.base_fee),
-            minDays: zoneData.min_delivery_days,
-            maxDays: zoneData.max_delivery_days,
-          };
-        }
-      }
-    }
-
-    // Fall back to country-wide (region = NULL)
-    const { data, error } = await supabase
-      .from('shipping_zones')
-      .select('base_fee, per_km_fee, min_delivery_days, max_delivery_days')
-      .eq('country', country)
-      .is('region', null)
+      .ilike('name', `%${query}%`)
       .eq('is_active', true)
       .limit(1)
       .single();
 
+    if (!error && data) {
+      return {
+        fee: parseFloat(data.base_fee),
+        minDays: data.min_delivery_days,
+        maxDays: data.max_delivery_days,
+      };
+    }
+
+    // If not found by name, try by region
+    ({ data, error } = await supabase
+      .from('shipping_zones')
+      .select('base_fee, per_km_fee, min_delivery_days, max_delivery_days')
+      .ilike('region', `%${query}%`)
+      .eq('is_active', true)
+      .limit(1)
+      .single());
+
+    if (!error && data) {
+      return {
+        fee: parseFloat(data.base_fee),
+        minDays: data.min_delivery_days,
+        maxDays: data.max_delivery_days,
+      };
+    }
+
+    // If not found by region, try by country
+    ({ data, error } = await supabase
+      .from('shipping_zones')
+      .select('base_fee, per_km_fee, min_delivery_days, max_delivery_days')
+      .eq('country', query)
+      .eq('is_active', true)
+      .limit(1)
+      .single());
+
+    if (!error && data) {
+      return {
+        fee: parseFloat(data.base_fee),
+        minDays: data.min_delivery_days,
+        maxDays: data.max_delivery_days,
+      };
+    }
+
+    // If still not found, try country-wide (region = NULL)
+    ({ data, error } = await supabase
+      .from('shipping_zones')
+      .select('base_fee, per_km_fee, min_delivery_days, max_delivery_days')
+      .eq('country', query)
+      .is('region', null)
+      .eq('is_active', true)
+      .limit(1)
+      .single());
+
     if (error || !data) {
-      console.error('Shipping zone not found for', country);
+      console.error('Shipping zone not found for location:', location);
       return null;
     }
 
@@ -906,22 +966,30 @@ export const getUserCartCount = async (email: string): Promise<number> => {
 export const addToCart = async (
   email: string,
   productId: string,
-  quantity: number = 1
+  quantity: number = 1,
+  knownStock?: number // Optional: client can pass known stock to avoid DB fetch
 ): Promise<CartItem | null> => {
   try {
-    // Ensure we don't add more than available stock
-    const { data: prodData, error: prodErr } = await supabase
-      .from('products')
-      .select('id, stock_quantity')
-      .eq('id', productId)
-      .limit(1)
-      .single();
+    let available = knownStock;
 
-    if (prodErr) {
-      // Product read may be blocked for client due to RLS; don't fail the add — assume ample availability
-      console.debug('Failed to fetch product for stock check (non-fatal, assuming available):', productId, prodErr);
+    // Only fetch stock if not provided by client
+    if (available === undefined) {
+      const { data: prodData, error: prodErr } = await supabase
+        .from('products')
+        .select('id, stock_quantity')
+        .eq('id', productId)
+        .limit(1)
+        .single();
+
+      if (prodErr) {
+        console.debug('Failed to fetch product for stock check (will allow add, backend validation applies):', productId);
+        // Don't block the add if we can't fetch - backend will validate
+        available = Number.MAX_SAFE_INTEGER;
+      } else {
+        available = prodData?.stock_quantity != null ? Number(prodData.stock_quantity) : 0;
+      }
     }
-    const available = prodData?.stock_quantity != null ? Number(prodData.stock_quantity) : Number.MAX_SAFE_INTEGER;
+    
     // Check if cart item already exists for this user/product
     const { data: existingData, error: fetchError } = await supabase
       .from('cart_items')
@@ -1072,7 +1140,8 @@ export const addToCart = async (
 export const updateCartItemQuantity = async (
   email: string,
   productId: string,
-  quantity: number
+  quantity: number,
+  knownStock?: number // Optional: client can pass known stock to avoid DB fetch
 ): Promise<CartItem | null> => {
   try {
     if (quantity <= 0) {
@@ -1082,29 +1151,36 @@ export const updateCartItemQuantity = async (
     }
 
     // Ensure requested quantity does not exceed available stock
-    try {
-      const { data: prodData, error: prodErr } = await supabase
-        .from('products')
-        .select('id, stock_quantity')
-        .eq('id', productId)
-        .limit(1)
-        .single();
-      if (prodErr) {
-        console.error('Failed to fetch product for stock check (update):', prodErr);
+    let available = knownStock;
+    
+    // Only fetch stock if not provided by client
+    if (available === undefined) {
+      try {
+        const { data: prodData, error: prodErr } = await supabase
+          .from('products')
+          .select('id, stock_quantity')
+          .eq('id', productId)
+          .limit(1)
+          .single();
+        if (prodErr) {
+          console.error('Failed to fetch product for stock check (update):', prodErr);
+        }
+        available = prodData?.stock_quantity != null ? Number(prodData.stock_quantity) : 0;
+      } catch (e) {
+        console.error('Error checking stock before update:', e);
+        available = 0;
       }
-      const available = prodData?.stock_quantity != null ? Number(prodData.stock_quantity) : 0;
-      if (available <= 0) {
-        // nothing available
-        console.warn('Product out of stock on update:', productId);
-        await removeFromCart(email, productId);
-        return null;
-      }
-      if (quantity > available) {
-        console.warn('Requested quantity exceeds stock, capping to available:', { productId, requested: quantity, available });
-        quantity = available;
-      }
-    } catch (e) {
-      console.error('Error checking stock before update:', e);
+    }
+    
+    if (available <= 0) {
+      // nothing available
+      console.warn('Product out of stock on update:', productId);
+      await removeFromCart(email, productId);
+      return null;
+    }
+    if (quantity > available) {
+      console.warn('Requested quantity exceeds stock, capping to available:', { productId, requested: quantity, available });
+      quantity = available;
     }
 
     const { data, error } = await supabase

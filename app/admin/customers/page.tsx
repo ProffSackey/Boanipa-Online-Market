@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AdminNavbar from "../../components/AdminNavbar";
 import { MagnifyingGlassIcon, EnvelopeIcon, EllipsisVerticalIcon, HomeIcon, UserGroupIcon, ShoppingCartIcon, CubeIcon, CreditCardIcon, ChartBarIcon, StarIcon, GiftIcon, BellIcon, CogIcon } from "@heroicons/react/24/outline";
+import { useAdminSession } from "../../../lib/useAdminSession";
 
 interface Customer {
   id: string;
@@ -26,25 +27,11 @@ const statusColors: Record<string, { bg: string; text: string }> = {
 
 export default function CustomersPage() {
   const router = useRouter();
+  const { sessionChecked } = useAdminSession();
   const [searchTerm, setSearchTerm] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [sessionChecked, setSessionChecked] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
-
-  useEffect(() => {
-    fetch("/api/admin/verify-session")
-      .then((res) => {
-        if (!res.ok) {
-          router.push("/admin/login");
-        } else {
-          setSessionChecked(true);
-        }
-      })
-      .catch(() => {
-        router.push("/admin/login");
-      });
-  }, [router]);
 
   useEffect(() => {
     const fetchCustomersData = async () => {

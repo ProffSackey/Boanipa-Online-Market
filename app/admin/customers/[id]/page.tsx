@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import AdminNavbar from "../../../components/AdminNavbar";
 import { ArrowLeftIcon, EnvelopeIcon, PhoneIcon, MapPinIcon } from "@heroicons/react/24/outline";
+import { useAdminSession } from "../../../../lib/useAdminSession";
 
 interface Order {
   id: string;
@@ -37,23 +38,9 @@ const statusColors: Record<string, { bg: string; text: string }> = {
 export default function CustomerProfilePage() {
   const router = useRouter();
   const params = useParams();
+  const { sessionChecked } = useAdminSession();
   const customerId = params.id as string;
-  const [sessionChecked, setSessionChecked] = useState(false);
   const [customer, setCustomer] = useState<Customer | null>(null);
-
-  useEffect(() => {
-    fetch("/api/admin/verify-session")
-      .then((res) => {
-        if (!res.ok) {
-          router.push("/admin/login");
-        } else {
-          setSessionChecked(true);
-        }
-      })
-      .catch(() => {
-        router.push("/admin/login");
-      });
-  }, [router]);
 
   // Load customer data from server
   useEffect(() => {

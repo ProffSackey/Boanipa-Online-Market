@@ -46,17 +46,25 @@ export default function Home() {
       return;
     }
 
+    // Check stock availability
+    const stock = product.stock_quantity ?? 0;
+    if (stock <= 0) {
+      setNotice('Product is out of stock');
+      setTimeout(() => setNotice(null), 4000);
+      return;
+    }
+
     setAddingToCart(productId);
     try {
       if (!user) {
-        // Add to guest cart and wait for cart update before showing confirmation
+        // Add to guest cart with stock validation
         addToGuestCart({
           productId: productId.toString(),
           quantity: 1,
           name: product.name,
           price: product.price.toString(),
           image_url: product.image_url,
-        });
+        }, stock); // Pass available stock
 
         let handled = false;
         const unsubscribe = subscribeToGuestCartChanges((count) => {
@@ -68,8 +76,8 @@ export default function Home() {
         // Fallback if event doesn't arrive in time
         setTimeout(() => { if (!handled) { handled = true; try { unsubscribe(); } catch {} console.debug('[Cart] guest add fallback'); } }, 1500);
       } else {
-        // Add to user cart and wait for server-side cart update
-        const cartResult = await addToCart(user.email, productId, 1);
+        // Add to user cart with known stock and wait for server-side cart update
+        const cartResult = await addToCart(user.email, productId, 1, stock);
         if (cartResult) {
           let handled = false;
           const unsubscribe = subscribeToUserCartChanges(user.email, () => {

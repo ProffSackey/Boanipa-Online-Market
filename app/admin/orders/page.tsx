@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AdminNavbar from "../../components/AdminNavbar";
 import { MagnifyingGlassIcon, FunnelIcon, ArrowDownTrayIcon, EyeIcon, EnvelopeIcon, EllipsisVerticalIcon, HomeIcon, UserGroupIcon, ShoppingCartIcon, CubeIcon, CreditCardIcon, ChartBarIcon, StarIcon, GiftIcon, BellIcon, CogIcon } from "@heroicons/react/24/outline";
+import { useAdminSession } from "../../../lib/useAdminSession";
 
 import mockOrders, { Order } from "./mockOrders";
 
 const statusColors: Record<string, { bg: string; text: string }> = {
   Delivered: { bg: "bg-blue-100", text: "text-blue-600" },
   Processing: { bg: "bg-gray-100", text: "text-gray-600" },
+  Pending: { bg: "bg-yellow-100", text: "text-yellow-600" },
   Shipped: { bg: "bg-gray-100", text: "text-gray-600" },
   Cancelled: { bg: "bg-red-100", text: "text-red-600" },
 };
@@ -18,42 +20,72 @@ const paymentColors: Record<string, string> = {
   Paid: "text-green-600",
   Refunded: "text-red-600",
   Pending: "text-yellow-600",
+  Unpaid: "text-red-600",
 };
 
 export default function OrdersPage() {
   const router = useRouter();
-  const [orders, setOrders] = useState(mockOrders);
+  const { sessionChecked } = useAdminSession();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All Status");
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [sessionChecked, setSessionChecked] = useState(false);
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
 
+  // Fetch orders on component mount
   useEffect(() => {
-    fetch('/api/admin/verify-session')
-      .then((res) => {
-        if (!res.ok) {
-          router.push('/admin/login');
+    const fetchOrders = async () => {
+      try {
+        const res = await fetch('/api/admin/orders');
+        if (res.ok) {
+          const data = await res.json();
+          setOrders(data);
         } else {
-          setSessionChecked(true);
+          console.error('Failed to fetch orders');
+          setOrders([]);
         }
-      })
-      .catch(() => {
-        router.push('/admin/login');
-      });
-  }, [router]);
+      } catch (error) {
+        console.error('Error fetching orders:', error);
+        setOrders([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (sessionChecked) {
+      fetchOrders();
+    }
+  }, [sessionChecked]);
 
   const handleLogout = async () => {
     await fetch('/api/admin/logout', { method: 'POST' });
     router.push('/admin/login');
   };
 
-  const handleStatusChange = (orderId: string, newStatus: "Delivered" | "Processing" | "Shipped" | "Cancelled") => {
-    setOrders(orders.map(order => 
-      order.id === orderId ? { ...order, status: newStatus } : order
-    ));
+  const handleStatusChange = async (orderId: string, newStatus: "Delivered" | "Processing" | "Shipped" | "Cancelled") => {
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus.toLowerCase() }),
+      });
+
+      if (res.ok) {
+        setOrders(orders.map(order =>
+          order.id === orderId ? { ...order, status: newStatus } : order
+        ));
+      } else {
+        console.error('Failed to update order status');
+        alert('Failed to update order status');
+      }
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      alert('Error updating order status');
+    }
     setEditingOrderId(null);
   };
 
@@ -73,6 +105,14 @@ export default function OrdersPage() {
 
     return matchesSearch && matchesStatus;
   });
+
+  // Helper function to calculate total quantity
+  const getTotalQuantity = (order: Order) => {
+    if (Array.isArray(order.itemsDetail)) {
+      return (order.itemsDetail as any[]).reduce((sum, item) => sum + (item.quantity || 1), 0);
+    }
+    return order.items || 0;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -184,15 +224,24 @@ export default function OrdersPage() {
             </div>
           </div>
 
-          {/* Table */}
-          <div className="m-8 rounded-lg shadow-sm overflow-hidden">
-            <table className="w-full bg-white">
-              <thead className="bg-gray-50 border-b">
-                <tr>
+          {/* Loading State */}
+          {loading ? (
+            <div className="bg-white m-8 rounded-lg shadow-sm p-8 text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+              <p className="mt-4 text-gray-600">Loading orders...</p>
+            </div>
+          ) : (
+            <>
+              {/* Table */}
+              <div className="m-8 rounded-lg shadow-sm max-h-96 overflow-y-auto">
+                <table className="w-full bg-white">
+                  <thead className="bg-gray-50 border-b sticky top-0">
+                    <tr>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Order</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Customer</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Items</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Amount</th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Shipping Address</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Status</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Payment</th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Date</th>
@@ -201,89 +250,147 @@ export default function OrdersPage() {
               </thead>
               <tbody>
                 {filteredOrders.map((order) => (
-                  <tr key={order.id} className="border-b hover:bg-gray-50 transition">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{order.id}</td>
-                    <td className="px-6 py-4 text-sm">
-                      <div className="font-medium text-gray-900">{order.customer}</div>
-                      <div className="text-gray-500">{order.email}</div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{order.items}</td>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{order.amount}</td>
-                    <td className="px-6 py-4 text-sm">
-                      {editingOrderId === order.id ? (
-                        <select
-                          value={order.status}
-                          onChange={(e) =>
-                            handleStatusChange(
-                              order.id,
-                              e.target.value as "Delivered" | "Processing" | "Shipped" | "Cancelled"
-                            )
-                          }
-                          className="px-2 py-1 border text-gray-800 border-gray-300 rounded-md text-sm"
-                        >
-                          <option value="Processing">Processing</option>
-                          <option value="Shipped">Shipped</option>
-                          <option value="Delivered">Delivered</option>
-                          <option value="Cancelled">Cancelled</option>
-                        </select>
-                      ) : (
-                        <span
-                          className={`inline-block px-3 py-1 rounded-full font-medium ${statusColors[order.status].bg} ${statusColors[order.status].text}`}
-                        >
-                          {order.status}
-                        </span>
-                      )}
-                    </td>
-                    <td className={`px-6 py-4 text-sm font-medium ${paymentColors[order.payment]}`}>
-                      {order.payment}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{order.date}</td>
-                    <td className="px-6 py-4 text-sm">
-                      <div className="flex items-center gap-3">
-                        <button
-                          onClick={() => router.push(`/admin/messages?email=${encodeURIComponent(order.email)}&name=${encodeURIComponent(order.customer)}`)}
-                          className="text-gray-500 hover:text-gray-700 transition"
-                          aria-label={`Message ${order.customer}`}
-                        >
-                          <EnvelopeIcon className="h-5 w-5" />
-                        </button>
-
-                        <div className="relative">
-                          <button
-                            onClick={() => setOpenMenuId(openMenuId === order.id ? null : order.id)}
-                            className="text-gray-500 hover:text-gray-700 transition"
-                            aria-label="More actions"
+                  <React.Fragment key={order.id}>
+                    <tr className="border-b hover:bg-gray-50 transition">
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900">{order.id}</td>
+                      <td className="px-6 py-4 text-sm">
+                        <div className="font-medium text-gray-900">{order.customer}</div>
+                        <div className="text-gray-500">{order.phone || 'N/A'}</div>
+                      </td>
+                      <td 
+                        className="px-6 py-4 text-sm text-blue-600 cursor-pointer hover:underline font-medium"
+                        onClick={() => setExpandedOrderId(expandedOrderId === order.id ? null : order.id)}
+                      >
+                        {getTotalQuantity(order)} items
+                      </td>
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900">{order.amount}</td>
+                      <td className="px-6 py-4 text-sm text-gray-700">
+                        {order.shippingAddress ? (
+                          <div className="text-xs max-w-xs">
+                            {typeof order.shippingAddress === 'object' ? (
+                              <>
+                                <div>{(order.shippingAddress as any).street}</div>
+                                <div>{(order.shippingAddress as any).city}, {(order.shippingAddress as any).region}</div>
+                                <div>{(order.shippingAddress as any).postcode}, {(order.shippingAddress as any).country}</div>
+                              </>
+                            ) : (
+                              <div>{order.shippingAddress}</div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-sm">
+                        {editingOrderId === order.id ? (
+                          <select
+                            value={order.status}
+                            onChange={(e) =>
+                              handleStatusChange(
+                                order.id,
+                                e.target.value as "Delivered" | "Processing" | "Shipped" | "Cancelled"
+                              )
+                            }
+                            className="px-2 py-1 border text-gray-800 border-gray-300 rounded-md text-sm"
                           >
-                            <EllipsisVerticalIcon className="h-5 w-5" />
+                            <option value="Processing">Processing</option>
+                            <option value="Shipped">Shipped</option>
+                            <option value="Delivered">Delivered</option>
+                            <option value="Cancelled">Cancelled</option>
+                          </select>
+                        ) : (
+                          <span
+                            className={`inline-block px-3 py-1 rounded-full font-medium ${(statusColors[order.status] || statusColors['Processing']).bg} ${(statusColors[order.status] || statusColors['Processing']).text}`}
+                          >
+                            {order.status}
+                          </span>
+                        )}
+                      </td>
+                      <td className={`px-6 py-4 text-sm font-medium ${paymentColors[order.payment] || paymentColors['Pending']}`}>
+                        {order.payment}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{order.date}</td>
+                      <td className="px-6 py-4 text-sm">
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => router.push(`/admin/messages?email=${encodeURIComponent(order.email)}&name=${encodeURIComponent(order.customer)}`)}
+                            className="text-gray-500 hover:text-gray-700 transition"
+                            aria-label={`Message ${order.customer}`}
+                          >
+                            <EnvelopeIcon className="h-5 w-5" />
                           </button>
 
-                          {openMenuId === order.id && (
-                            <div className="absolute z-20 mt-2 right-0 w-44 bg-white border border-gray-300 rounded-lg shadow-lg">
-                              <button
-                                onClick={() => {
-                                  setEditingOrderId(order.id);
-                                  setOpenMenuId(null);
-                                }}
-                                className="w-full text-left px-3 py-2 hover:bg-gray-100 transition text-gray-900"
-                              >
-                                Update status
-                              </button>
-                              <button
-                                onClick={() => {
-                                  router.push(`/admin/orders/${encodeURIComponent(order.id)}`);
-                                  setOpenMenuId(null);
-                                }}
-                                className="w-full text-left px-3 py-2 hover:bg-gray-100 transition text-gray-900"
-                              >
-                                View order details
-                              </button>
-                              {/* message customer removed */}
-                            </div>
-                          )}
+                          <div className="relative">
+                            <button
+                              onClick={() => setOpenMenuId(openMenuId === order.id ? null : order.id)}
+                              className="text-gray-500 hover:text-gray-700 transition"
+                              aria-label="More actions"
+                            >
+                              <EllipsisVerticalIcon className="h-5 w-5" />
+                            </button>
+
+                            {openMenuId === order.id && (
+                              <div className="absolute z-20 mt-2 right-0 w-48 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden">
+                                <button
+                                  onClick={() => {
+                                    setEditingOrderId(order.id);
+                                    setOpenMenuId(null);
+                                  }}
+                                  className="w-full text-left px-4 py-3 hover:bg-blue-50 transition text-gray-900 font-medium text-sm border-b border-gray-100 flex items-center gap-2"
+                                >
+                                  <svg className="h-4 w-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                  <span>Update Status</span>
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    router.push(`/admin/orders/${encodeURIComponent(order.id)}`);
+                                    setOpenMenuId(null);
+                                  }}
+                                  className="w-full text-left px-4 py-3 hover:bg-blue-50 transition text-gray-900 font-medium text-sm flex items-center gap-2"
+                                >
+                                  <svg className="h-4 w-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                  <span>View Details</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                  </tr>
+                      </td>
+                    </tr>
+
+                    {/* Expandable Items Detail Row */}
+                    {expandedOrderId === order.id && (
+                      <tr className="bg-blue-50 border-b">
+                        <td colSpan={9} className="px-6 py-4">
+                          <div className="space-y-3">
+                            <h4 className="font-semibold text-gray-900">Order Items:</h4>
+                            {Array.isArray(order.itemsDetail) && order.itemsDetail.length > 0 ? (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {(order.itemsDetail as any[]).map((item, idx) => (
+                                  <div key={idx} className="bg-white p-3 rounded border border-gray-200">
+                                    <div className="flex justify-between items-start gap-2">
+                                      <div className="flex-1">
+                                        <p className="font-medium text-gray-900">Product {idx + 1}</p>
+                                        <p className="text-sm text-gray-600">ID: {item.productId}</p>
+                                        <p className="text-sm text-gray-600">Qty: {item.quantity || 1}</p>
+                                        <p className="text-sm font-medium text-gray-900 mt-1">£{(item.price || 0).toFixed(2)}</p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-sm text-gray-600">No items details available</p>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
@@ -293,6 +400,8 @@ export default function OrdersPage() {
             <div className="m-8 rounded-lg shadow-sm p-8 text-center text-gray-500 bg-white">
               No orders found.
             </div>
+          )}
+            </>
           )}
         </div>
       </div>

@@ -109,6 +109,53 @@ export async function POST(request: NextRequest) {
       // Don't fail the order creation if customer update fails
     }
 
+    // Decrement stock for each item in the order
+    try {
+      for (const item of items) {
+        const { product_id, quantity } = item;
+        
+        if (!product_id || !quantity) {
+          console.warn('Skipping item without product_id or quantity:', item);
+          continue;
+        }
+
+        // Get current stock
+        const { data: product, error: fetchError } = await supabaseAdmin
+          .from('products')
+          .select('stock_quantity, id')
+          .eq('id', product_id)
+          .single();
+
+        if (fetchError) {
+          console.error(`Error fetching product ${product_id}:`, fetchError);
+          continue;
+        }
+
+        if (!product) {
+          console.warn(`Product ${product_id} not found`);
+          continue;
+        }
+
+        const currentStock = product.stock_quantity || 0;
+        const newStock = Math.max(0, currentStock - quantity); // Don't go below 0
+
+        // Update product stock
+        const { error: updateError } = await supabaseAdmin
+          .from('products')
+          .update({ stock_quantity: newStock })
+          .eq('id', product_id);
+
+        if (updateError) {
+          console.error(`Error updating stock for product ${product_id}:`, updateError);
+        } else {
+          console.log(`Updated stock for product ${product_id}: ${currentStock} -> ${newStock}`);
+        }
+      }
+    } catch (err) {
+      console.error('Error updating product stock:', err);
+      // Don't fail the order creation if stock update fails
+    }
+
     return NextResponse.json(
       {
         success: true,

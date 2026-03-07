@@ -31,6 +31,7 @@ async function createAdmin() {
   try {
     const email = await askQuestion('Enter admin email: ');
     const password = await askQuestion('Enter admin password: ');
+    const fullName = await askQuestion('Enter admin full name: ');
 
     if (!email || !password) {
       console.error('Error: Email and password are required');
@@ -48,7 +49,7 @@ async function createAdmin() {
       email_confirm: true, // Skips email verification
       user_metadata: {
         is_admin: true,
-        full_name: 'Admin User'
+        full_name: fullName.trim() || 'Admin User'
       }
     });
 

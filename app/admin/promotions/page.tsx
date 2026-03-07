@@ -4,16 +4,17 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AdminNavbar from "../../components/AdminNavbar";
 import { MagnifyingGlassIcon, FunnelIcon, PlusIcon, EyeIcon, XMarkIcon, PencilIcon, TrashIcon, HomeIcon, UserGroupIcon, ShoppingCartIcon, CubeIcon, CreditCardIcon, ChartBarIcon, StarIcon, GiftIcon, BellIcon, EnvelopeIcon, CogIcon } from "@heroicons/react/24/outline";
+import { useAdminSession } from "../../../lib/useAdminSession";
 import { fetchPromotions, createPromotion, updatePromotion, deletePromotion, fetchProducts, type Promotion, type Product } from "../../../lib/supabaseService";
 
 export default function PromotionsPage() {
   console.log("[PromotionsPage] mounted");
   const router = useRouter();
+  const { sessionChecked } = useAdminSession();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState("All Types");
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [sessionChecked, setSessionChecked] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -31,29 +32,20 @@ export default function PromotionsPage() {
   });
 
   useEffect(() => {
-    fetch('/api/admin/verify-session')
-      .then((res) => {
-        if (!res.ok) {
-          router.push('/admin/login');
-        } else {
-          setSessionChecked(true);
-        }
-      })
-      .catch(() => {
-        router.push('/admin/login');
-      });
-  }, [router]);
-
-  useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const [promos, prods] = await Promise.all([
-          fetchPromotions(),
+        const [promosRes, prodsRes] = await Promise.all([
+          fetch('/api/admin/promotions'),
           fetchProducts()
         ]);
-        setPromotions(promos);
-        setProducts(prods);
+
+        if (promosRes.ok) {
+          const promos = await promosRes.json();
+          setPromotions(promos);
+        }
+        
+        setProducts(prodsRes);
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
@@ -94,7 +86,7 @@ export default function PromotionsPage() {
       code: promo.code || "",
       type: promo.type,
       discount: promo.discount.replace(/[%£]/g, ""),
-      deadline: promo.deadline,
+      deadline: new Date(promo.deadline).toISOString().split('T')[0], // Format for date input
       description: promo.description || "",
       startDate: promo.start_date || new Date().toISOString().split('T')[0],
     });
@@ -107,40 +99,83 @@ export default function PromotionsPage() {
       return;
     }
 
+    // Validate deadline is not in the past
+    const deadlineDate = new Date(formData.deadline);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (deadlineDate < today) {
+      alert("Deadline cannot be in the past");
+      return;
+    }
+
+    // Validate start date is not after deadline
+    if (formData.startDate) {
+      const startDate = new Date(formData.startDate);
+      if (startDate > deadlineDate) {
+        alert("Start date cannot be after deadline");
+        return;
+      }
+    }
+
     try {
+      console.log('[handleSavePromotion] Saving promotion with data:', {
+        name: formData.name,
+        code: formData.code,
+        type: formData.type,
+        deadline: new Date(formData.deadline + 'T23:59:59').toISOString()
+      });
+
       if (editingId) {
-        // Update existing promotion in Supabase
-        const updated = await updatePromotion(editingId, {
-          name: formData.name,
-          code: formData.code,
-          type: formData.type as "Percentage" | "Fixed",
-          discount: formData.type === "Percentage" ? `${formData.discount}%` : `£${formData.discount}`,
-          deadline: formData.deadline,
-          description: formData.description,
-          product_ids: selectedProducts,
-          start_date: formData.startDate,
+        // Update existing promotion via API
+        const response = await fetch('/api/admin/promotions', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: editingId,
+            name: formData.name,
+            code: formData.code,
+            type: formData.type as "Percentage" | "Fixed",
+            discount: formData.type === "Percentage" ? `${formData.discount}%` : `£${formData.discount}`,
+            deadline: new Date(formData.deadline + 'T23:59:59').toISOString(),
+            description: formData.description,
+            product_ids: selectedProducts,
+            start_date: formData.startDate,
+          }),
         });
 
-        if (updated) {
-          setPromotions(promotions.map((p) => p.id === editingId ? updated : p));
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to update promotion');
         }
+
+        const updated = await response.json();
+        setPromotions(promotions.map((p) => p.id === editingId ? updated : p));
       } else {
-        // Create new promotion in Supabase
-        const newPromo = await createPromotion({
-          name: formData.name,
-          code: formData.code,
-          type: formData.type as "Percentage" | "Fixed",
-          discount: formData.type === "Percentage" ? `${formData.discount}%` : `£${formData.discount}`,
-          deadline: formData.deadline,
-          description: formData.description,
-          product_ids: selectedProducts,
-          is_active: true,
-          start_date: formData.startDate,
+        // Create new promotion via API
+        const response = await fetch('/api/admin/promotions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: formData.name,
+            code: formData.code,
+            type: formData.type as "Percentage" | "Fixed",
+            discount: formData.type === "Percentage" ? `${formData.discount}%` : `£${formData.discount}`,
+            deadline: new Date(formData.deadline + 'T23:59:59').toISOString(),
+            description: formData.description,
+            product_ids: selectedProducts,
+            is_active: true,
+            start_date: formData.startDate,
+          }),
         });
 
-        if (newPromo) {
-          setPromotions([...promotions, newPromo]);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to create promotion');
         }
+
+        const newPromo = await response.json();
+        setPromotions([...promotions, newPromo]);
       }
 
       setShowAddModal(false);

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '../../../../lib/supabaseClient';
+import { getSupabaseAdmin } from '../../../../lib/supabaseClient';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -10,6 +10,11 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const supabaseAdmin = getSupabaseAdmin();
+    if (!supabaseAdmin) {
+      return NextResponse.json({ error: 'Service role not configured' }, { status: 500 });
+    }
+
     const { data, error } = await supabaseAdmin
       .from('messages')
       .select('*')

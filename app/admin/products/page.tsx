@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import AdminNavbar from "../../components/AdminNavbar";
 import { MagnifyingGlassIcon, FunnelIcon, PencilSquareIcon, TrashIcon, HomeIcon, UserGroupIcon, ShoppingCartIcon, CubeIcon, CreditCardIcon, ChartBarIcon, StarIcon, GiftIcon, BellIcon, EnvelopeIcon, CogIcon, PlusIcon } from "@heroicons/react/24/outline";
 import { fetchCategories, type Product } from "../../../lib/supabaseService";
+import { useAdminSession } from "../../../lib/useAdminSession";
 
 const statusColors: Record<string, { bg: string; text: string }> = {
   "active": { bg: "bg-green-100", text: "text-green-600" },
@@ -17,11 +18,11 @@ const statusColors: Record<string, { bg: string; text: string }> = {
 
 export default function ProductsPage() {
   const router = useRouter();
+  const { sessionChecked } = useAdminSession();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [sessionChecked, setSessionChecked] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>(["All Categories"]);
 
@@ -43,20 +44,6 @@ export default function ProductsPage() {
       console.error('error deleting product', err);
     }
   };
-
-  useEffect(() => {
-    fetch("/api/admin/verify-session")
-      .then((res) => {
-        if (!res.ok) {
-          router.push("/admin/login");
-        } else {
-          setSessionChecked(true);
-        }
-      })
-      .catch(() => {
-        router.push("/admin/login");
-      });
-  }, [router]);
 
   // fetch products and categories from admin API after session check
   useEffect(() => {

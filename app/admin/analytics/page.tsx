@@ -8,28 +8,15 @@ import RevenueChart from "../../components/RevenueChart";
 import SalesByCategory from "../../components/SalesByCategory";
 import TopProducts from "../../components/TopProducts";
 import TopBuyingCustomers from "../../components/TopBuyingCustomers";
+import { useAdminSession } from "../../../lib/useAdminSession";
 
 export default function AnalyticsPage() {
   const router = useRouter();
+  const { sessionChecked } = useAdminSession();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [sessionChecked, setSessionChecked] = useState(false);
   const [timePeriod, setTimePeriod] = useState("Today");
   const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
   const [kpis, setKpis] = useState({ revenue: '', orders: 0, customers: 0, lowStock: 0 });
-
-  useEffect(() => {
-    fetch("/api/admin/verify-session")
-      .then((res) => {
-        if (!res.ok) {
-          router.push("/admin/login");
-        } else {
-          setSessionChecked(true);
-        }
-      })
-      .catch(() => {
-        router.push("/admin/login");
-      });
-  }, [router]);
 
   // Calculate KPIs from API endpoints
   useEffect(() => {

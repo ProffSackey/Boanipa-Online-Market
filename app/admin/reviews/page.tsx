@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AdminNavbar from "../../components/AdminNavbar";
 import { MagnifyingGlassIcon, FunnelIcon, HomeIcon, UserGroupIcon, ShoppingCartIcon, CubeIcon, CreditCardIcon, ChartBarIcon, StarIcon, GiftIcon, BellIcon, EnvelopeIcon, CogIcon } from "@heroicons/react/24/outline";
+import { useAdminSession } from "../../../lib/useAdminSession";
 
 interface Review {
   id: string;
@@ -39,57 +40,12 @@ const StarRating = ({ rating }: { rating: number }) => {
 
 export default function ReviewsPage() {
   const router = useRouter();
+  const { sessionChecked } = useAdminSession();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All Status");
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [sessionChecked, setSessionChecked] = useState(false);
   const [reviews, setReviews] = useState<Review[]>([]);
-
-  useEffect(() => {
-    // after verifying admin session, load reviews
-    const loadReviews = async () => {
-      try {
-        const res = await fetch('/api/admin/reviews');
-        if (!res.ok) {
-          console.error('Failed to fetch admin reviews', await res.text());
-          return;
-        }
-        const data = await res.json();
-        // map supabase join result into our Review interface
-        const mapped: Review[] = (data || []).map((r: any) => ({
-          id: r.id,
-          customer: r.customers?.email || 'Unknown',
-          email: r.customers?.email || 'Unknown',
-          product: r.products?.name || r.product_id || 'Unknown',
-          rating: r.rating,
-          comment: r.comment,
-          status: 'Approved',
-          date: new Date(r.created_at).toLocaleDateString(),
-        }));
-        setReviews(mapped);
-      } catch (err) {
-        console.error('Error loading reviews', err);
-      }
-    };
-    if (sessionChecked) {
-      loadReviews();
-    }
-  }, [sessionChecked]);
-
-  useEffect(() => {
-    fetch("/api/admin/verify-session")
-      .then((res) => {
-        if (!res.ok) {
-          router.push("/admin/login");
-        } else {
-          setSessionChecked(true);
-        }
-      })
-      .catch(() => {
-        router.push("/admin/login");
-      });
-  }, [router]);
 
   const handleLogout = async () => {
     await fetch("/api/admin/logout", { method: "POST" });

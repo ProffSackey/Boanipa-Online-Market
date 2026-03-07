@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AdminNavbar from "../../components/AdminNavbar";
 import { HomeIcon, UserGroupIcon, ShoppingCartIcon, CubeIcon, CreditCardIcon, ChartBarIcon, StarIcon, GiftIcon, BellIcon, EnvelopeIcon, CogIcon } from "@heroicons/react/24/outline";
+import { useAdminSession } from "../../../lib/useAdminSession";
 
 import { Notification, fetchNotifications, markNotificationRead, markAllNotificationsRead } from "../../../lib/supabaseService";
 
@@ -21,24 +22,10 @@ const relativeTime = (iso?: string) => {
 
 export default function NotificationsPage() {
   const router = useRouter();
+  const { sessionChecked } = useAdminSession();
   const [filter, setFilter] = useState("All");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [sessionChecked, setSessionChecked] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-
-  useEffect(() => {
-    fetch('/api/admin/verify-session')
-      .then((res) => {
-        if (!res.ok) {
-          router.push('/admin/login');
-        } else {
-          setSessionChecked(true);
-        }
-      })
-      .catch(() => {
-        router.push('/admin/login');
-      });
-  }, [router]);
 
   useEffect(() => {
     if (sessionChecked) {

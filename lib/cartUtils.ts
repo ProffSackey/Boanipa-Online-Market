@@ -61,18 +61,28 @@ export const getGuestCart = (): GuestCartItem[] => {
 /**
  * Add item to guest cart
  */
-export const addToGuestCart = (item: GuestCartItem): void => {
+export const addToGuestCart = (item: GuestCartItem, maxStock: number = 999): void => {
   if (typeof window === 'undefined') return;
   try {
-    console.log('[cartUtils] Adding to guest cart:', item);
+    console.log('[cartUtils] Adding to guest cart:', item, 'maxStock:', maxStock);
     const cart = getGuestCart();
     const existingIndex = cart.findIndex(c => c.productId === item.productId);
     
     if (existingIndex >= 0) {
-      cart[existingIndex].quantity += item.quantity;
+      let newQuantity = cart[existingIndex].quantity + item.quantity;
+      if (newQuantity > maxStock) {
+        newQuantity = maxStock;
+        console.warn('[cartUtils] Capped quantity to available stock:', { productId: item.productId, requested: cart[existingIndex].quantity + item.quantity, capped: newQuantity });
+      }
+      cart[existingIndex].quantity = newQuantity;
       console.log('[cartUtils] Updated existing item quantity to:', cart[existingIndex].quantity);
     } else {
-      cart.push(item);
+      let quantity = item.quantity;
+      if (quantity > maxStock) {
+        quantity = maxStock;
+        console.warn('[cartUtils] Capped new item quantity to available stock:', { productId: item.productId, requested: item.quantity, capped: quantity });
+      }
+      cart.push({ ...item, quantity });
       console.log('[cartUtils] Added new item to cart');
     }
     
@@ -90,7 +100,7 @@ export const addToGuestCart = (item: GuestCartItem): void => {
 /**
  * Update item quantity in guest cart
  */
-export const updateGuestCartItem = (productId: string, quantity: number): void => {
+export const updateGuestCartItem = (productId: string, quantity: number, maxStock: number = 999): void => {
   if (typeof window === 'undefined') return;
   try {
     let cart = getGuestCart();
@@ -99,6 +109,11 @@ export const updateGuestCartItem = (productId: string, quantity: number): void =
     } else {
       const item = cart.find(c => c.productId === productId);
       if (item) {
+        // Cap quantity at available stock
+        if (quantity > maxStock) {
+          console.warn('[cartUtils] Capped update quantity to available stock:', { productId, requested: quantity, capped: maxStock });
+          quantity = maxStock;
+        }
         item.quantity = quantity;
       }
     }

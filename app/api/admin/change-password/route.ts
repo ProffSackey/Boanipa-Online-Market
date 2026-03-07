@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { supabaseAdmin } from '@/lib/supabaseClient';
+import { getSupabaseAdmin } from '@/lib/supabaseClient';
 
 /**
  * POST /api/admin/change-password
@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const supabaseAdmin = getSupabaseAdmin();
     if (!supabaseAdmin) {
       return NextResponse.json(
         { error: 'Server misconfiguration: admin client unavailable' },
@@ -87,22 +88,23 @@ export async function POST(request: NextRequest) {
 
     console.log('[CHANGE-PASSWORD] User email retrieved:', adminEmail);
 
-    // Verify current password by attempting to sign in with it
-    const tokenRes = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/token?grant_type=password`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
-        },
-        body: new URLSearchParams({ email: adminEmail, password: currentPassword }),
-      }
+    // Verify current password by signing in with the Supabase client
+    // This avoids manual fetch bugs with URLSearchParams.
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabaseClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL as string,
+      process.env.SUPABASE_SERVICE_ROLE_KEY as string
     );
 
-    console.log('[CHANGE-PASSWORD] Password verification status:', tokenRes.status);
+    const { data: verifyData, error: verifyError } =
+      await supabaseClient.auth.signInWithPassword({
+        email: adminEmail,
+        password: currentPassword,
+      });
 
-    if (!tokenRes.ok) {
+    console.log('[CHANGE-PASSWORD] verifyError', verifyError?.message);
+
+    if (verifyError || !verifyData.session) {
       return NextResponse.json(
         { error: 'Current password is incorrect' },
         { status: 401 }

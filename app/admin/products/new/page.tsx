@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import AdminNavbar from "../../../components/AdminNavbar";
 import { HomeIcon, UserGroupIcon, ShoppingCartIcon, CubeIcon, CreditCardIcon, ChartBarIcon, StarIcon, GiftIcon, BellIcon, EnvelopeIcon, CogIcon, CloudArrowUpIcon } from "@heroicons/react/24/outline";
+import { useAdminSession } from "../../../../lib/useAdminSession";
 
 interface Product {
   id: string;
@@ -20,6 +21,7 @@ export const dynamic = 'force-dynamic';
 
 export default function NewProductPage() {
   const router = useRouter();
+  const { sessionChecked } = useAdminSession();
   const [productId, setProductId] = useState<string | null>(null);
 
   // read ID from query string after mount to avoid SSR issues
@@ -28,7 +30,6 @@ export default function NewProductPage() {
     setProductId(params.get('id'));
   }, []);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [sessionChecked, setSessionChecked] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -58,20 +59,6 @@ export default function NewProductPage() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
-
-  useEffect(() => {
-    fetch("/api/admin/verify-session")
-      .then((res) => {
-        if (!res.ok) {
-          router.push("/admin/login");
-        } else {
-          setSessionChecked(true);
-        }
-      })
-      .catch(() => {
-        router.push("/admin/login");
-      });
-  }, [router]);
 
   // load categories and load product if editing
   useEffect(() => {

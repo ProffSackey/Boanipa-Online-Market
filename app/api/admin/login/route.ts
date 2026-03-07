@@ -40,37 +40,34 @@ export async function POST(req: Request) {
       return res;
     }
 
-    // Fallback to Supabase Auth token endpoint to verify credentials
-    const tokenRes = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/token?grant_type=password`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
-        },
-        body: new URLSearchParams({ email, password }),
-      }
+    // Fallback to Supabase Auth using official client to verify credentials
+    // This avoids manual fetch and ensures correct encoding of payload.
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL as string,
+      process.env.SUPABASE_SERVICE_ROLE_KEY as string // use service key for admin operations
     );
 
-    const signInJson = await tokenRes.json();
-    
-    console.log('[LOGIN] Supabase response status:', tokenRes.status);
-    console.log('[LOGIN] Supabase response:', signInJson);
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-    if (!tokenRes.ok || !signInJson?.access_token) {
+    if (signInError || !signInData.session) {
+      console.log('[LOGIN] Supabase signIn error:', signInError?.message);
       console.log('[LOGIN] Auth failed for email:', email);
       return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 });
     }
 
-    const accessToken = signInJson?.access_token ?? '';
-    const refreshToken = signInJson?.refresh_token ?? '';
+    const accessToken = signInData.session.access_token;
+    const refreshToken = signInData.session.refresh_token;
+    console.log('[LOGIN] Supabase login succeeded, got tokens');
     console.log('[LOGIN] Setting cookies with accessToken:', !!accessToken, 'refreshToken:', !!refreshToken);
-    
+
     const res = NextResponse.json({ 
       ok: true,
-      accessToken: accessToken, // Return token so client can send it as fallback
-      refreshToken: refreshToken, // supply refresh token for client session
+      accessToken,
+      refreshToken,
     });
     // set simple admin session flag
     res.cookies.set({
@@ -86,8 +83,6 @@ export async function POST(req: Request) {
     console.log('[LOGIN] admin_session cookie set');
     console.log('[LOGIN] Cookies after setting:', res.cookies.getAll().map(c => c.name));
 
-    // also set sb-admin-token so server-side admin routes that check for
-    // this cookie (existing code) see the Supabase access token
     if (accessToken) {
       res.cookies.set({
         name: 'sb-admin-token',

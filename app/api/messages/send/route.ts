@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '../../../../lib/supabaseClient';
+import { getSupabaseAdmin } from '../../../../lib/supabaseClient';
 
 export async function POST(request: NextRequest) {
   try {
@@ -7,6 +7,11 @@ export async function POST(request: NextRequest) {
 
     if (!email || !content) {
       return NextResponse.json({ error: 'Email and content required' }, { status: 400 });
+    }
+
+    const supabaseAdmin = getSupabaseAdmin();
+    if (!supabaseAdmin) {
+      return NextResponse.json({ error: 'Service role not configured' }, { status: 500 });
     }
 
     const { data, error } = await supabaseAdmin

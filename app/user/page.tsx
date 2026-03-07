@@ -94,22 +94,44 @@ export default function UserPage() {
             orders: [],
           };
 
+          console.log('=== USER SESSION INFO ===');
+          console.log('User Email from session:', builtProfile.email);
+          console.log('User ID:', builtProfile.id);
+          console.log('Full Name:', builtProfile.fullName);
+
           // attempt to fetch recent orders for display
+          console.log('Fetching orders for email:', builtProfile.email);
           fetch(`/api/customer-orders?email=${encodeURIComponent(builtProfile.email)}`)
-            .then((res) => res.ok ? res.json() : Promise.reject())
-            .then((orders: any[]) => {
-              builtProfile.orders = orders.map((o) => ({
-                id: o.id,
-                date: o.created_at || '',
-                amount: o.total_amount || '',
-                status: o.status || 'Processing',
-                items: Array.isArray(o.items) ? o.items.length : 0,
-              }));
+            .then((res) => {
+              console.log('Orders API response status:', res.status);
+              if (!res.ok) {
+                console.error('Failed to fetch orders:', res.status);
+                return [];
+              }
+              return res.json();
             })
-            .catch((_) => {
+            .then((ordersData: any[]) => {
+              console.log('Orders API response data:', ordersData);
+              if (Array.isArray(ordersData) && ordersData.length > 0) {
+                console.log(`Mapping ${ordersData.length} orders`);
+                builtProfile.orders = ordersData.map((o) => ({
+                  id: o.order_number || o.id,
+                  date: o.created_at ? new Date(o.created_at).toLocaleDateString() : '',
+                  amount: `£${(o.total_amount || 0).toFixed(2)}`,
+                  status: (o.status || 'processing').charAt(0).toUpperCase() + (o.status || 'processing').slice(1).toLowerCase() as any,
+                  items: Array.isArray(o.items) ? o.items.length : 0,
+                }));
+                console.log('Mapped orders:', builtProfile.orders);
+              } else {
+                console.log('No orders returned or ordersData is not an array');
+              }
+            })
+            .catch((err) => {
+              console.error('Error fetching orders:', err);
               // ignore failure, profile will show empty orders
             })
             .finally(() => {
+              console.log('Setting profile with orders:', builtProfile.orders);
               setUserProfile(builtProfile);
               setLoading(false);
             });
@@ -377,40 +399,41 @@ export default function UserPage() {
             </button>
 
             {/* Profile Header */}
-            <div className="bg-white shadow rounded-lg p-8 mb-6">
+            <div className="bg-gradient-to-r from-blue-50 to-blue-100 shadow-sm rounded-xl p-8 mb-8 border border-blue-200">
               <div className="flex items-start gap-6">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-3xl flex-shrink-0">
+                <div className="w-28 h-28 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white font-bold text-4xl flex-shrink-0 shadow-lg">
                   {getInitials(userProfile.fullName)}
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <h1 className="text-3xl font-bold text-gray-900">{profile.fullName}</h1>
-                    <span className="px-4 py-2 rounded-full font-semibold text-sm bg-green-100 text-green-600">
-                      Active Member
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h1 className="text-4xl font-bold text-gray-900">{profile.fullName}</h1>
+                      <p className="text-blue-600 font-medium mt-1">Member since {profile.joinedDate}</p>
+                    </div>
+                    <span className="px-4 py-2 rounded-full font-semibold text-sm bg-green-100 text-green-700 border border-green-300">
+                      ✓ Active Member
                     </span>
                   </div>
-                  <p className="text-gray-600 mb-4">Member since {profile.joinedDate}</p>
-
                 </div>
               </div>
             </div>
 
             {/* Contact Information */}
-            <div className="bg-white shadow rounded-lg p-8 mb-6">
+            <div className="bg-white shadow-sm rounded-xl p-8 mb-8 border border-gray-200">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Contact Information</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
-                  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                    <EnvelopeIcon className="h-5 w-5 text-gray-500" />
-                    <p className="text-gray-900">{profile.email}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-gray-50 rounded-lg p-6 border border-gray-200 hover:border-gray-300 transition">
+                  <label className="block text-xs uppercase font-semibold text-gray-600 mb-3 tracking-wider">Email Address</label>
+                  <div className="flex items-center gap-3">
+                    <EnvelopeIcon className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                    <p className="text-gray-900 font-medium">{profile.email}</p>
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Phone Number</label>
-                  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                    <PhoneIcon className="h-5 w-5 text-gray-500" />
-                    <p className="text-gray-900">{profile.phone}</p>
+                <div className="bg-gray-50 rounded-lg p-6 border border-gray-200 hover:border-gray-300 transition">
+                  <label className="block text-xs uppercase font-semibold text-gray-600 mb-3 tracking-wider">Phone Number</label>
+                  <div className="flex items-center gap-3">
+                    <PhoneIcon className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                    <p className="text-gray-900 font-medium">{profile.phone || '—'}</p>
                   </div>
                 </div>
               </div>
@@ -444,7 +467,10 @@ export default function UserPage() {
                   {profile.orders.length} orders
                 </span>
               </div>
-
+              {/* Debug info - remove this later */}
+              <div className="mb-4 p-3 bg-gray-100 rounded text-sm text-gray-700">
+                <p>Account Email: <strong>{profile.email}</strong></p>
+              </div>
               {profile.orders.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full">
@@ -514,12 +540,6 @@ export default function UserPage() {
                     className="w-full text-left px-4 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg transition font-medium text-gray-900"
                   >
                     Shipping / Delivery Info
-                  </button>
-                  <button
-                    onClick={handleSignOut}
-                    className="w-full text-left px-4 py-3 bg-red-50 hover:bg-red-100 rounded-lg transition font-medium text-red-600"
-                  >
-                    Sign Out
                   </button>
                 </div>
               )}

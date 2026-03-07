@@ -1,34 +1,32 @@
 import { calculateShippingFee } from '@/lib/supabaseService';
 
 /**
- * GET /api/shipping-rates?country=GB&region=SW
- * Returns shipping fee and delivery estimate for a given country and region
+ * GET /api/shipping-rates?location=ZONE_NAME_OR_REGION_CODE_OR_COUNTRY
+ * Returns shipping fee and delivery estimate for a given location (zone name, region code, or country)
  */
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
-    const country = url.searchParams.get('country')?.toUpperCase();
-    const region = url.searchParams.get('region')?.toUpperCase();
+    const location = url.searchParams.get('location')?.toUpperCase();
 
-    if (!country) {
+    if (!location) {
       return Response.json(
-        { error: 'Country code is required' },
+        { error: 'Location is required (zone name, region code, or country)' },
         { status: 400 }
       );
     }
 
-    const result = await calculateShippingFee(country, region || undefined);
+    const result = await calculateShippingFee(location);
 
     if (!result) {
       return Response.json(
-        { error: `Shipping not available for ${country}` },
+        { error: `Shipping not available for ${location}` },
         { status: 404 }
       );
     }
 
     return Response.json({
-      country,
-      region: region || null,
+      location,
       shippingFee: result.fee,
       estimatedDeliveryMin: result.minDays,
       estimatedDeliveryMax: result.maxDays,
