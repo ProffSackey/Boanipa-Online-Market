@@ -4,13 +4,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AdminNavbar from "../../components/AdminNavbar";
 import { HomeIcon, UserGroupIcon, ShoppingCartIcon, CubeIcon, CreditCardIcon, ChartBarIcon, StarIcon, GiftIcon, BellIcon, EnvelopeIcon, CogIcon, TrashIcon, PlusIcon } from "@heroicons/react/24/outline";
-import { fetchCategories, createCategory, deleteCategory, updateCategory, type Category } from "../../../lib/supabaseService";
 
 // defaultCategories now fetched from DB
 
 export default function CategoriesPage() {
   const router = useRouter();
-  const [categories, setCategories] = useState<string[]>(["All Categories"]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [sessionChecked, setSessionChecked] = useState(false);
@@ -32,8 +31,17 @@ export default function CategoriesPage() {
 
   useEffect(() => {
     const loadCats = async () => {
-      const cats = await fetchCategories();
-      setCategories(cats.map((c) => c.name));
+      try {
+        const response = await fetch('/api/categories');
+        if (response.ok) {
+          const cats = await response.json();
+          setCategories(cats);
+        } else {
+          console.error('Failed to fetch categories');
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
     };
     if (sessionChecked) loadCats();
   }, [sessionChecked]);
@@ -53,11 +61,19 @@ export default function CategoriesPage() {
     }
 
     try {
-      const created = await createCategory({ name });
-      if (created) {
-        setCategories([...categories, created.name]);
+      const response = await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+      if (response.ok) {
+        const updatedCategories = await response.json();
+        setCategories(updatedCategories);
         setNewCategory("");
         setMessage("Category added successfully!");
+      } else {
+        const error = await response.json();
+        setMessage(error.error || "Error creating category");
       }
     } catch (err) {
       console.error(err);
@@ -69,9 +85,19 @@ export default function CategoriesPage() {
 
   const handleDeleteCategory = async (categoryName: string) => {
     try {
-      await deleteCategory(categoryName);
-      setCategories(categories.filter((cat) => cat !== categoryName));
-      setMessage(`${categoryName} deleted.`);
+      const response = await fetch('/api/categories', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: categoryName }),
+      });
+      if (response.ok) {
+        const updatedCategories = await response.json();
+        setCategories(updatedCategories);
+        setMessage(`${categoryName} deleted.`);
+      } else {
+        const error = await response.json();
+        setMessage(error.error || "Error deleting category");
+      }
     } catch (err) {
       console.error(err);
       setMessage("Error deleting category");

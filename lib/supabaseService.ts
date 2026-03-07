@@ -546,12 +546,12 @@ export const updateCategory = async (id: string, updates: Partial<Category>): Pr
 /**
  * Delete a category
  */
-export const deleteCategory = async (id: string): Promise<boolean> => {
+export const deleteCategory = async (name: string): Promise<boolean> => {
   try {
     const { error } = await supabase
       .from('categories')
       .delete()
-      .eq('id', id);
+      .eq('name', name);
 
     if (error) {
       console.error('Error deleting category:', error);
@@ -960,6 +960,17 @@ export const addToCart = async (
 
       result = updated?.[0] || null;
     } else {
+      // Insert new cart item. First validate quantity against available stock.
+      if (available <= 0) {
+        console.warn('Product out of stock, cannot add to cart:', productId);
+        return null;
+      }
+      let insertQuantity = quantity;
+      if (insertQuantity > available) {
+        console.warn('Requested quantity exceeds stock, capping to available:', { productId, requested: quantity, available });
+        insertQuantity = available;
+      }
+
       // Insert new cart item. If a unique-constraint error occurs (race), fall back to incrementing.
       const { data: inserted, error: insertError } = await supabase
         .from('cart_items')
@@ -967,7 +978,7 @@ export const addToCart = async (
           {
             customer_email: email,
             product_id: productId,
-            quantity,
+            quantity: insertQuantity,
           },
         ])
         .select();

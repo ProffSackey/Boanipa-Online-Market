@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCartIcon, UserCircleIcon, MagnifyingGlassIcon, BellIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ShoppingCartIcon, UserCircleIcon, MagnifyingGlassIcon, BellIcon, Bars3Icon, XMarkIcon, EnvelopeIcon } from '@heroicons/react/24/outline';
 
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
@@ -241,10 +241,15 @@ export default function Navbar() {
                 <BellIcon className="h-7 w-7 sm:h-9 sm:w-9" />
               </Link>
             ) : null}
+            {user ? (
+              <Link href="/messages" className="text-gray-600 hover:text-gray-900 transition p-1">
+                <EnvelopeIcon className="h-7 w-7 sm:h-9 sm:w-9" />
+              </Link>
+            ) : null}
             <Link href="/cart" className="text-gray-600 hover:text-gray-900 transition p-1 relative">
               <ShoppingCartIcon className="h-7 w-7 sm:h-9 sm:w-9" />
               {cartCount > 0 && (
-                <span className="absolute top-0 right-0 bg-orange-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center -translate-y-1 translate-x-1">
+                <span className="absolute top-0 right-0 bg-orange-500 text-white text-xs font-bold rounded-full h-5 min-w-5 w-auto px-1 flex items-center justify-center whitespace-nowrap -translate-y-1 translate-x-1">
                   {cartCount}
                 </span>
               )}

@@ -8,6 +8,29 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    // Check if ID parameter is provided
+    const id = req.nextUrl.searchParams.get('id');
+    
+    if (id) {
+      // Fetch single product by ID
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, name, price, image_url, about, category, stock_quantity')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching product:', error);
+        return NextResponse.json({ error: error.message }, { status: 404 });
+      }
+
+      if (!data) {
+        return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+      }
+
+      return NextResponse.json(data);
+    }
+
     // Get all products with their raw field values
     const { data, error } = await supabase
       .from('products')

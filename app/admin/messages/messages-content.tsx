@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import AdminNavbar from "../../components/AdminNavbar";
 import { MagnifyingGlassIcon, HomeIcon, UserGroupIcon, ShoppingCartIcon, CubeIcon, CreditCardIcon, ChartBarIcon, StarIcon, GiftIcon, BellIcon, EnvelopeIcon, CogIcon } from "@heroicons/react/24/outline";
+import { supabaseAdmin } from "../../../lib/supabaseClient";
 
 interface MessageThread {
   id: string;
@@ -81,6 +82,43 @@ export default function MessagesPageContent() {
       });
   }, [router]);
 
+  // Realtime subscription for new messages to admin
+  useEffect(() => {
+    if (!sessionChecked || !supabaseAdmin) return;
+
+    const channel = supabaseAdmin
+      .channel('admin-messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: 'recipient_email=eq.admin@boanipa.com',
+        },
+        () => {
+          // Reload threads
+          fetch('/api/admin/messages/threads')
+            .then((res) => (res.ok ? res.json() : []))
+            .then((data) => setThreads(Array.isArray(data) ? data : []))
+            .catch(() => setThreads([]));
+
+          // If selected thread, reload messages
+          if (selectedThread) {
+            fetch(`/api/admin/messages/thread?email=${encodeURIComponent(selectedThread.email)}`)
+              .then((res) => (res.ok ? res.json() : []))
+              .then((data) => setChatMessages(Array.isArray(data) ? data : []))
+              .catch(() => setChatMessages([]));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [sessionChecked, selectedThread]);
+
   // Load messages for the selected thread (server-backed if endpoint exists)
   useEffect(() => {
     if (!selectedThread) {
@@ -107,19 +145,44 @@ export default function MessagesPageContent() {
     thread.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     thread.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  const handleSend = (e: any) => {
+  const handleSend = async (e: any) => {
     const isEnter = e?.key === 'Enter' && !e?.shiftKey;
     const isClick = e?.type === 'click';
 
     if ((isEnter || isClick) && newMessage.trim() && selectedThread) {
+      const messageContent = newMessage.trim();
+      setNewMessage("");
+
+      // Optimistically add message
       const newMsg: ChatMessage = {
         id: `m${chatMessages.length + 1}`,
         fromAdmin: true,
-        content: newMessage,
+        content: messageContent,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setChatMessages((prev) => [...prev, newMsg]);
-      setNewMessage("");
+
+      try {
+        const response = await fetch('/api/admin/messages/send', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recipientEmail: selectedThread.email,
+            content: messageContent,
+          }),
+        });
+
+        if (!response.ok) {
+          // Remove temp message on failure
+          setChatMessages((prev) => prev.filter(m => m.id !== newMsg.id));
+          console.error("Failed to send message");
+        }
+      } catch (error) {
+        // Remove temp message on failure
+        setChatMessages((prev) => prev.filter(m => m.id !== newMsg.id));
+        console.error("Failed to send message:", error);
+      }
+
       e?.preventDefault?.();
     }
   };
@@ -127,6 +190,21 @@ export default function MessagesPageContent() {
   const getInitialColor = (id: string) => {
     const colors = ['bg-blue-500', 'bg-purple-500', 'bg-pink-500', 'bg-green-500', 'bg-orange-500'];
     return colors[parseInt(id) % colors.length];
+  };
+
+  const formatThreadTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
   return (
@@ -175,24 +253,20 @@ export default function MessagesPageContent() {
                       thread.unread = 0;
                       setSelectedThread(thread);
                     }}
-                    className={`px-4 py-3 border-b border-gray-100 cursor-pointer transition hover:bg-gray-50 ${
-                      selectedThread?.id === thread.id ? "bg-blue-50 border-l-4 border-l-blue-500" : ""
+                    className={`px-4 py-4 border-b border-gray-100 cursor-pointer transition hover:bg-gray-50 ${
+                      selectedThread?.id === thread.id ? "bg-gray-50 border-l-4 border-l-gray-400" : ""
                     }`}
                   >
-                    <div className="flex items-start gap-3">
-                      <div className={`${getInitialColor(thread.id)} text-white rounded-full w-10 h-10 flex items-center justify-center flex-shrink-0 text-sm font-semibold relative`}>
+                    <div className="flex items-center gap-4">
+                      <div className={`${getInitialColor(thread.id)} text-white rounded-full w-12 h-12 flex items-center justify-center flex-shrink-0 text-base font-semibold relative`}>
                         {thread.avatar}
-                        {thread.online && <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white" />}
+                        {thread.online && <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-white" />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-semibold text-gray-900 truncate">{thread.name}</span>
-                          {thread.unread > 0 && (
-                            <span className="bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full flex-shrink-0">{thread.unread}</span>
-                          )}
-                        </div>
-                        <p className="text-sm text-gray-600 truncate">{thread.lastMessage}</p>
-                        <p className="text-xs text-gray-500">{thread.time}</p>
+                        <span className="font-semibold text-gray-900 truncate block">{thread.name}</span>
+                        {thread.unread > 0 && (
+                          <span className="bg-blue-500 text-white text-xs font-semibold px-2 py-1 rounded-full inline-block mt-1">{thread.unread}</span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -226,15 +300,40 @@ export default function MessagesPageContent() {
                 <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
                   {chatMessages.map((msg) => (
                     <div key={msg.id} className={`flex ${msg.fromAdmin ? "justify-end" : "justify-start"}`}>
-                      <div className={`flex gap-2 max-w-md ${msg.fromAdmin ? "flex-row-reverse" : ""}`}>
+                      <div className={`flex gap-0 items-end ${msg.fromAdmin ? "flex-row-reverse" : ""}`}>
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0 ${msg.fromAdmin ? "bg-gray-700" : getInitialColor(selectedThread.id)}`}>
                           {msg.fromAdmin ? "AD" : selectedThread.avatar}
                         </div>
-                        <div className={`flex flex-col ${msg.fromAdmin ? "items-end" : "items-start"}`}>
-                          <div className={`px-4 py-2 rounded-lg text-sm leading-relaxed ${msg.fromAdmin ? "bg-blue-600 text-white rounded-br-none" : "bg-white border border-gray-200 text-gray-900 rounded-bl-none"}`}>
-                            {msg.content}
+                        <div className={`flex gap-1 items-end ${msg.fromAdmin ? "flex-row-reverse" : ""}`}>
+                          <p className={`text-xs text-gray-500 flex-shrink-0 ${msg.fromAdmin ? "mr-1" : "ml-1"}`}>
+                            {msg.time}
+                          </p>
+                          <div className={`px-4 py-2 rounded-lg text-sm leading-relaxed ${msg.fromAdmin ? "bg-blue-500 text-white rounded-br-none" : "bg-white border border-gray-200 text-gray-900 rounded-bl-none"}`}>
+                            {msg.content.includes('![Product Image](') ? (
+                              <div className="space-y-2">
+                                <p>{msg.content.split('\n\n![Product Image](')[0]}</p>
+                                {(() => {
+                                  const imageUrlMatch = msg.content.match(/!\[Product Image\]\((.*?)\)/);
+                                  const imageUrl = imageUrlMatch?.[1];
+                                  return imageUrl && imageUrl.includes('.') ? (
+                                    <img
+                                      src={imageUrl}
+                                      alt="Product"
+                                      className="max-w-xs h-auto rounded-lg border-2 border-gray-300"
+                                      onError={(e) => {
+                                        console.error('Image failed to load:', imageUrl);
+                                        (e.target as HTMLImageElement).style.display = 'none';
+                                      }}
+                                    />
+                                  ) : (
+                                    <p className="text-xs opacity-75">Product image</p>
+                                  );
+                                })()}
+                              </div>
+                            ) : (
+                              <p>{msg.content}</p>
+                            )}
                           </div>
-                          <p className="text-xs text-gray-500 mt-1">{msg.time}</p>
                         </div>
                       </div>
                     </div>
@@ -255,7 +354,7 @@ export default function MessagesPageContent() {
                     />
                     <button
                       onClick={handleSend}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium text-sm transition"
+                      className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-medium text-sm transition"
                     >
                       Send
                     </button>

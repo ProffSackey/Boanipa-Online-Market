@@ -7,6 +7,9 @@ import { MagnifyingGlassIcon, FunnelIcon, PencilSquareIcon, TrashIcon, HomeIcon,
 import { fetchCategories, type Product } from "../../../lib/supabaseService";
 
 const statusColors: Record<string, { bg: string; text: string }> = {
+  "active": { bg: "bg-green-100", text: "text-green-600" },
+  "inactive": { bg: "bg-red-100", text: "text-red-600" },
+  "archived": { bg: "bg-gray-100", text: "text-gray-600" },
   "In Stock": { bg: "bg-green-100", text: "text-green-600" },
   "Out of Stock": { bg: "bg-red-100", text: "text-red-600" },
   "Low Stock": { bg: "bg-yellow-100", text: "text-yellow-600" },
