@@ -34,12 +34,19 @@ export default function ProductCard({ product: p, promotions = [], user, addingT
   return (
     <>
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-      {/* Image Container - Responsive height */}
-      <div className="h-64 sm:h-80 lg:h-72 xl:h-60 bg-gray-200 flex items-center justify-center text-gray-500 overflow-hidden">
+      {/* Image Container - Responsive height with relative positioning for badge overlay */}
+      <div className="relative h-64 sm:h-80 lg:h-72 xl:h-60 bg-gray-200 flex items-center justify-center text-gray-500 overflow-hidden">
         {p.image_url ? (
           <img src={p.image_url} alt={p.name} className="w-full h-full object-cover" />
         ) : (
           'Image'
+        )}
+        
+        {/* Discount Badge Overlay */}
+        {discount && (
+          <div className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-green-500 text-white px-2 sm:px-3 py-1 rounded-full font-bold text-xs sm:text-sm shadow-lg">
+            Save {discount.savingsPercent.toFixed(0)}%
+          </div>
         )}
       </div>
 
@@ -99,17 +106,12 @@ export default function ProductCard({ product: p, promotions = [], user, addingT
         <div className="flex flex-col gap-2">
           {/* Price Section */}
           {discount ? (
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-gray-500 line-through">
-                  {discount.formatted.original || '£0.00'}
-                </span>
-                <span className="text-xl sm:text-2xl lg:text-xl xl:text-lg font-bold text-orange-600">
-                  {discount.formatted.discounted || '£0.00'}
-                </span>
-              </div>
-              <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded font-semibold max-w-full truncate">
-                Save {discount.savingsPercent.toFixed(0)}%
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500 line-through">
+                {discount.formatted.original || '£0.00'}
+              </span>
+              <span className="text-xl sm:text-2xl lg:text-xl xl:text-lg font-bold text-orange-600">
+                {discount.formatted.discounted || '£0.00'}
               </span>
             </div>
           ) : (
